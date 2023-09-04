@@ -136,7 +136,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               TextButton(
                 child: Text("导出"),
                 onPressed: () {
-                  exportTranslation();
+                  exportTranslation("android");
                 },
               ),
               SizedBox(
@@ -714,9 +714,11 @@ class _ProjectDetail extends State<ProjectDetail> {
         xmlString = '''
         <resources>
           <string name="Device_charged">设备已通电</string>
-          <string name="a4x_ai_area_content">定义提醒区域，只推送精准位置的触发消息，过滤掉其余信息。</string>
-          <string name="a4x_ai_area_title">提醒区域</string>
-          <string name="a4x_ai_cloud_10GB">(≤10GB)</string>
+          <string-array name="night_node_array">
+              <item>全彩夜视</item>
+              <item>红外夜视</item>
+              <item>黑白夜视</item>
+          </string-array>
         </resources>
         ''';
       }
@@ -724,66 +726,87 @@ class _ProjectDetail extends State<ProjectDetail> {
 
       List<Translation> translations = [];
       for (var element in xmlDocument.childElements) {
-        for (var childElement in element.childElements) {
-          String languageKey = childElement.attributes.first.value;
-          String translationContent = childElement.innerText;
-          print("$languageKey:$translationContent");
-          Translation translation = Translation(languageKey,
-              importLanguageId ?? "", translationContent, project.projectId);
-          translations.add(translation);
+        var elementName = element.name.toXmlString();
+        print(elementName);
+        if (elementName == "resources") {
+          for (var childElement in element.childElements) {
+            var childElementName = childElement.name.toXmlString();
+            print(childElementName);
+            if (childElementName == "string") {
+              String languageKey = childElement.attributes.first.value;
+              String translationContent = childElement.innerText;
+              print("$languageKey:$translationContent");
+
+              Translation translation = Translation(
+                  languageKey,
+                  importLanguageId ?? "",
+                  translationContent,
+                  project.projectId);
+              translations.add(translation);
+            } else if (childElementName == "string-array") {
+              String languageKey = childElement.attributes.first.value;
+              StringBuffer translationContentBuilder = StringBuffer();
+              for (var thirdChildElement in childElement.childElements) {
+                translationContentBuilder.write(thirdChildElement.innerText);
+                translationContentBuilder.write("|");
+              }
+
+              String translationContent = translationContentBuilder.toString();
+              var substring = translationContent.substring(
+                  0, translationContent.length - 1);
+              print("$languageKey:$substring");
+            }
+          }
         }
       }
       addTranslationRemote(translations);
     }
   }
 
-  void exportTranslation() {
-    // print(file.path);
-
+  void exportTranslation(String platform) {
     var keys = translationKeyContentMap.keys;
-    List<int> bytes = [];
-    int i = 1;
     StringBuffer sb = StringBuffer();
+    if (platform == "android") {
+      sb.write(''' <?xml version="1.0" encoding="utf-8"?>\n ''');
+      sb.write(''' <resources>\n ''');
+    }
     for (var key in keys) {
       var translationLanguageContentMap = translationKeyContentMap[key];
       if (translationLanguageContentMap != null) {
         var content = translationLanguageContentMap["cn"];
-
-        i--;
         if (null != content) {
-          var trans = "\"$key\"=$content,";
-          // bytes.addAll("\n\"iterable\"=$i".codeUnits);
-          // bytes.addAll(trans.codeUnits);
-          // print(trans);
-          sb.writeln(trans);
-        }
-        if (i <= 0) {
-          break;
+          String trans;
+          if (platform == "ios") {
+            // trans = "\n\"$key\"=$content";
+            trans = ''' "$key"=$content\n ''';
+          } else {
+            //<string name="Device_charged">设备已通电</string>
+            trans = '''<string name="$key">$content</string>\n''';
+          }
+          print("trans$trans");
+          sb.write(trans);
         }
       }
     }
+    if (platform == "android") {
+      sb.write(''' </resources> ''');
+    }
 
     var string = sb.toString();
-    print(string);
-
-    bytes = string.codeUnits;
     var downloadName = "cn.txt";
+    if (platform == "android") {
+      downloadName = "cn.xml";
+    }
+    final anchor =
+        AnchorElement(href: 'data:application/octet-stream;utf-8,$string')
+          ..target = 'blank';
 
-    final _base64 = base64Encode(bytes);
-    // print("2");
-    // // Create the link with the file
-    // final anchor =
-    //     AnchorElement(href: 'data:application/octet-stream;base64,$_base64')
-    //       ..target = 'blank';
-    // print("3");
-    // // add the name
-    // anchor.download = downloadName;
-    // // trigger download
-    // var body = document.body;
-    // if (null != body) {
-    //   body.append(anchor);
-    // }
-    // anchor.click();
-    // anchor.remove();
+    anchor.download = downloadName;
+    var body = document.body;
+    if (null != body) {
+      body.append(anchor);
+    }
+    anchor.click();
+    anchor.remove();
   }
 }
