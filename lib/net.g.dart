@@ -48,17 +48,21 @@ Map<String, dynamic> _$CommonListResponseToJson<DATA>(
 
 Translation _$TranslationFromJson(Map<String, dynamic> json) => Translation(
       json['translationKey'] as String,
-      json['languageId'] as String,
+      json['languageId'] as int,
       json['translationContent'] as String,
       json['projectId'] as String,
+      translationId: json['translationId'] as int?,
+      moduleId: json['moduleId'] as int?,
     );
 
 Map<String, dynamic> _$TranslationToJson(Translation instance) =>
     <String, dynamic>{
+      'translationId': instance.translationId,
       'translationKey': instance.translationKey,
       'languageId': instance.languageId,
       'translationContent': instance.translationContent,
       'projectId': instance.projectId,
+      'moduleId': instance.moduleId,
     };
 
 Project _$ProjectFromJson(Map<String, dynamic> json) => Project(
@@ -72,13 +76,27 @@ Map<String, dynamic> _$ProjectToJson(Project instance) => <String, dynamic>{
     };
 
 Language _$LanguageFromJson(Map<String, dynamic> json) => Language(
-      json['languageId'] as String,
       json['languageName'] as String,
+      json['languageDes'] as String,
       json['projectId'] as String,
+      languageId: json['languageId'] as int?,
     );
 
 Map<String, dynamic> _$LanguageToJson(Language instance) => <String, dynamic>{
       'languageId': instance.languageId,
       'languageName': instance.languageName,
+      'languageDes': instance.languageDes,
+      'projectId': instance.projectId,
+    };
+
+Module _$ModuleFromJson(Map<String, dynamic> json) => Module(
+      json['moduleName'] as String,
+      json['projectId'] as String,
+      moduleId: json['moduleId'] as int?,
+    );
+
+Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
+      'moduleId': instance.moduleId,
+      'moduleName': instance.moduleName,
       'projectId': instance.projectId,
     };

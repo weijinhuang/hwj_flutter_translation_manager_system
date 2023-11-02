@@ -1,8 +1,7 @@
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:html';
+// import 'dart:html';
 
-// import 'dart:js_interop';
 import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
@@ -10,8 +9,6 @@ import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:xml/xml.dart';
-
-// const LANGUAGE_KEY = "Key";
 
 class ProjectDetail extends StatefulWidget {
   ProjectDetail(this.project);
@@ -25,13 +22,19 @@ class ProjectDetail extends StatefulWidget {
 class _ProjectDetail extends State<ProjectDetail> {
   _ProjectDetail(this.project);
 
-  List<Translation> translationList = List.empty();
-  Map<String, Map<String, String>> translationKeyContentMap = HashMap();
-  Project project;
-  List<String> languageIdList = [];
+  List<Language> languageList = [];
+  List<Module> modules = [];
 
-  String _newLanguageId = "";
+  List<Translation> translationList = List.empty();
+  Map<int, Map<String, Map<int, Translation>>> translationRootMap = HashMap();
+
+  Module? mCurrentSelectedModule;
+
+  Project project;
+
+  String _newlanguageName = "";
   String _newLanguageName = "";
+  String translationKeyChange = "";
 
   @override
   void initState() {
@@ -41,30 +44,42 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void fetchTranslation() {
     WJHttp http = WJHttp();
-    http.fetchLanguageList(project.projectId).then((languageListWrapper) => {
-          http
-              .fetchTranslation(project.projectId)
-              .then((translationListWrapper) => {
-                    setState(() {
-                      languageIdList.clear();
-                      for (var element in languageListWrapper.data) {
-                        languageIdList.add(element.languageId);
-                      }
-                      translationList = translationListWrapper.data;
-                      for (var element in translationList) {
-                        Map<String, String>? translationDetail =
-                            translationKeyContentMap[element.translationKey];
-                        if (translationDetail == null) {
-                          translationDetail = HashMap();
-                          translationKeyContentMap[element.translationKey] =
-                              translationDetail;
-                        }
-                        translationDetail[element.languageId] =
-                            element.translationContent;
-                      }
-                    })
-                  })
-        });
+    http.fetchModuleList(project.projectId).then((moduleListWrapper) {
+      if (moduleListWrapper.code == 200) {
+        modules = moduleListWrapper.data;
+        if (modules.isNotEmpty) {
+          Module currentSelectedModule = modules[0];
+          mCurrentSelectedModule = currentSelectedModule;
+          http.fetchLanguageList(project.projectId).then((languageListWrapper) {
+            if (languageListWrapper.code == 200) {
+              languageList = languageListWrapper.data;
+              for (Language element in languageList) {
+                print("语言：${element.languageName}");
+              }
+              http.fetchTranslation(project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? -1).then((translationListWrapper) {
+                setState(() {
+                  translationList = translationListWrapper.data;
+                  for (var element in translationList) {
+                    Map<String, Map<int, Translation>>? translationKeyLanguageTranslationMap = translationRootMap[element.moduleId];
+                    if (translationKeyLanguageTranslationMap == null) {
+                      translationKeyLanguageTranslationMap = HashMap();
+                      translationRootMap[element.moduleId ?? -1] = translationKeyLanguageTranslationMap;
+                    }
+
+                    Map<int, Translation>? languageTranslationMap = translationKeyLanguageTranslationMap[element.translationKey];
+                    if (null == languageTranslationMap) {
+                      languageTranslationMap = HashMap();
+                      translationKeyLanguageTranslationMap[element.translationKey] = languageTranslationMap;
+                    }
+                    languageTranslationMap[element.languageId] = element;
+                  }
+                });
+              });
+            }
+          });
+        }
+      }
+    });
   }
 
   @override
@@ -80,7 +95,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 builder: (context) {
                   return showTranslationEditDialog(null, context, null);
                 });
-            addTranslation(result);
+            addTranslation(result, 1);
           },
           child: const Icon(Icons.add),
         ),
@@ -92,24 +107,41 @@ class _ProjectDetail extends State<ProjectDetail> {
             project.projectName,
             style: const TextStyle(color: Colors.black),
           ),
-          actions: [
-            GestureDetector(
-              onTap: () {
-                showDialog(
-                    barrierDismissible: true,
-                    context: context,
-                    builder: (context) {
-                      return showAddLanguageDialog();
-                    });
-              },
-              child: Container(
-                margin: const EdgeInsets.only(left: 10, right: 20),
-                child: const Icon(Icons.add_circle_sharp),
-              ),
-            )
-          ],
+          actions: buildActions(),
         ),
         body: buildBody());
+  }
+
+  List<Widget> buildActions() {
+    List<Widget> actions = [];
+    actions.add(GestureDetector(
+      onTap: () {
+        showDialog(
+            barrierDismissible: true,
+            context: context,
+            builder: (context) {
+              return showAddLanguageDialog();
+            });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(left: 10, right: 20),
+        child: const Icon(Icons.add_circle_sharp),
+      ),
+    ));
+    actions.add(TextButton(
+      key: importBtnKey,
+      onPressed: () {
+        showImportLanguageDialog((value) => selectFile(value));
+      },
+      child: const Text("导入"),
+    ));
+    actions.add(TextButton(
+      child: const Text("导出"),
+      onPressed: () {
+        showImportLanguageDialog((language) => showSelectPlatformDialog((platform) => exportTranslation(platform, language)));
+      },
+    ));
+    return actions;
   }
 
   GlobalKey importBtnKey = GlobalKey();
@@ -118,7 +150,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     // if (translationMap.isEmpty) {
     //   return const Center(child: CircularProgressIndicator());
     // }
-    // return buildTranslationTable();
+
     return Container(
       margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
       child: Column(
@@ -126,30 +158,13 @@ class _ProjectDetail extends State<ProjectDetail> {
         children: [
           Row(
             children: [
-              TextButton(
-                child: Text("导入"),
-                key: importBtnKey,
-                onPressed: () {
-                  showImportLanguageDialog();
-                },
-              ),
-              TextButton(
-                child: Text("导出"),
-                onPressed: () {
-                  exportTranslation("android");
-                },
-              ),
               SizedBox(
                 width: 700,
                 height: 40,
                 child: TextFormField(
                   autofocus: true,
                   textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                      border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(30))),
-                      filled: false,
-                      hintText: "输入key或翻译内容搜索"),
+                  decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
                   onChanged: (value) {
                     project.projectName = value;
                   },
@@ -159,21 +174,33 @@ class _ProjectDetail extends State<ProjectDetail> {
           ),
           // buildTranslationTable(),
           buildLanguageListTitle(),
-          buildTranslationList()
+          buildTranslationList(mCurrentSelectedModule)
         ],
       ),
     );
   }
 
-  Widget buildTranslationList() {
-    var translationKeyList =
-        translationKeyContentMap.keys.toList(growable: false);
+  Widget buildTranslationList(Module? module) {
+    List<Map<int, Translation>> translationList = [];
+    if (module == null) {
+      print("module == null");
+      for (Map<String, Map<int, Translation>> element in translationRootMap.values) {
+        translationList.addAll(element.values);
+      }
+    } else {
+      print("module == ${module.moduleName}");
+      Map<String, Map<int, Translation>>? t = translationRootMap[module.moduleId];
+      print("translation : ${t?.values.length ?? 0}");
+      if (null != t) {
+        translationList.addAll(t.values);
+      }
+    }
     return Expanded(
       child: ListView.builder(
         itemBuilder: (context, index) {
-          return buildTranslationListItem(translationKeyList[index]);
+          return buildTranslationListItem(translationList[index]);
         },
-        itemCount: translationKeyList.length,
+        itemCount: translationList.length,
       ),
     );
   }
@@ -183,8 +210,8 @@ class _ProjectDetail extends State<ProjectDetail> {
 
     Widget textItem = buildTranslationText("Key", FontWeight.bold);
     widgetList.add(textItem);
-    for (String language in languageIdList) {
-      Widget textItem = buildTranslationText(language, FontWeight.bold);
+    for (Language language in languageList) {
+      Widget textItem = buildTranslationText(language.languageName, FontWeight.bold);
       widgetList.add(textItem);
     }
     return Flex(
@@ -193,16 +220,40 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  Widget buildTranslationListItem(String translationKey) {
-    var translationContentMap = translationKeyContentMap[translationKey];
-
+  Widget buildTranslationListItem(Map<int, Translation> languageTranslationMap) {
     List<Widget> widgetList = [];
-    Widget textItem = buildTranslationText(translationKey, null);
-    widgetList.add(textItem);
-    for (String language in languageIdList) {
-      Widget textItem =
-          buildTranslationText(translationContentMap?[language] ?? "", null);
-      widgetList.add(textItem);
+    if (languageTranslationMap.isNotEmpty) {
+      //Key
+      String translationKey = languageTranslationMap.values.first.translationKey;
+      Widget keyItem = buildTranslationText(translationKey, FontWeight.bold);
+      widgetList.add(GestureDetector(
+        child: keyItem,
+        onDoubleTap: () {
+          showDialog(
+              barrierDismissible: true,
+              context: context,
+              builder: (context) {
+                return showDeleteTranslationDialog(translationKey);
+              });
+        },
+      ));
+      //翻译列表
+      for (Language language in languageList) {
+        Widget contentItem = buildTranslationText(languageTranslationMap[language.languageId]?.translationContent ?? "NULL", null);
+        widgetList.add(GestureDetector(
+          child: contentItem,
+          onTap: () async {
+            var result = await showDialog(
+                barrierDismissible: true,
+                context: context,
+                builder: (context) {
+                  return showTranslationEditDialog(translationKey, context, languageTranslationMap);
+                });
+
+            addTranslation(result, language.languageId ?? -1);
+          },
+        ));
+      }
     }
     return Flex(
       direction: Axis.horizontal,
@@ -211,6 +262,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   Widget buildTranslationText(String text, FontWeight? fontWeight) {
+    print("buildTranslationText $text");
     Container textItem = Container(
         width: 200,
         margin: const EdgeInsets.only(left: 5, right: 5),
@@ -224,114 +276,12 @@ class _ProjectDetail extends State<ProjectDetail> {
     return textItem;
   }
 
-  Widget buildTranslationTable() {
-    return Expanded(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            horizontalMargin: 10,
-            showBottomBorder: true,
-            columns: buildTableTitles(),
-            rows: buildTranslationRows(),
-            columnSpacing: 50,
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<DataColumn> buildTableTitles() {
-    List<DataColumn> titles = [];
-    List<String> titleItem = [];
-    titleItem.add("LanguageKey");
-    titleItem.addAll(languageIdList);
-    for (int i = 0; i < titleItem.length; i++) {
-      var element = titleItem[i];
-      titles.add(DataColumn(
-          label: GestureDetector(
-        onLongPress: () {
-          if (i == 0) {
-            return;
-          }
-          showDialog(
-              barrierDismissible: true,
-              context: context,
-              builder: (context) {
-                return showDeleteLanguageDialog(element);
-              });
-        },
-        child: SizedBox(
-          width: 100,
-          child: Text(
-            element,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      )));
-    }
-
-    return titles;
-  }
-
-  List<DataRow> buildTranslationRows() {
-    List<DataRow> rows = [];
-    for (var translationKey in translationKeyContentMap.keys) {
-      rows.add(DataRow(cells: buildCells(translationKey)));
-    }
-    return rows;
-  }
-
-  List<DataCell> buildCells(String translationKey) {
-    var translations = translationKeyContentMap[translationKey];
-    List<DataCell> cells = [];
-    cells.add(DataCell(Text(translationKey), onDoubleTap: () {
-      showDialog(
-          barrierDismissible: true,
-          context: context,
-          builder: (context) {
-            return showDeleteTranslationDialog(translations, translationKey);
-          });
-    }));
-
-    for (var i = 0; i < languageIdList.length; i++) {
-      var languageId = languageIdList[i];
-      var translation = translations?[languageId];
-      cells.add(DataCell(
-          ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 200),
-              child: Text(
-                translation ?? "",
-                overflow: TextOverflow.ellipsis,
-              )), onTap: () async {
-        var result = await showDialog(
-            barrierDismissible: true,
-            context: context,
-            builder: (context) {
-              return showTranslationEditDialog(
-                  translationKey, context, translations);
-            });
-        addTranslation(result);
-      }));
-    }
-
-    return cells;
-  }
-
-  String translationKeyChange = "";
-
-  Widget buildTranslationEditText(
-      int index,
-      String? translationKey,
-      Map<String, String>? translations,
-      Map<String, String> translationChanged,
-      String languageId) {
+  Widget buildTranslationEditText(int index, String? translationKey, Map<String, String>? translations, Map<String, String> translationChanged, String languageName) {
     String? initialValue;
     if (index == 0) {
       initialValue = translationKey;
     } else {
-      initialValue = translations?[languageId] ?? " ";
+      initialValue = translations?[languageName] ?? " ";
     }
     initialValue ??= " ";
     return SizedBox(
@@ -341,31 +291,26 @@ class _ProjectDetail extends State<ProjectDetail> {
         autofocus: true,
         initialValue: initialValue,
         textInputAction: TextInputAction.next,
-        decoration: InputDecoration(
-            border: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(5))),
-            filled: false,
-            hintText: "请输入内容",
-            labelText: languageId),
+        decoration: InputDecoration(border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入内容", labelText: languageName),
         onChanged: (value) {
-          translations?[languageId] = value;
-          translationChanged[languageId] = value;
+          translations?[languageName] = value;
+          translationChanged[languageName] = value;
         },
       ),
     );
   }
 
-  AlertDialog showTranslationEditDialog(String? translationKey,
-      BuildContext context, Map<String, String>? translationIdContentMap) {
-    Map<String, String> translationIdContentMapChanged =
-        HashMap<String, String>();
+  AlertDialog showTranslationEditDialog(String? translationKey, BuildContext context, Map<int, Translation>? translationIdContentMap) {
+    Map<int, Translation> translationIdContentMapChanged = HashMap<int, Translation>();
     // translationIdContentMapChanged[LANGUAGE_KEY] = translationKey ?? "";
     String? titleText;
+    translationKeyChange = translationKey??"";
     if (translationKey == null) {
       titleText = "添加语言";
     } else {
       titleText = "编辑语言";
     }
+    print(titleText);
     // var keys = translationIdContentMap.keys.toList();
 
     List<Widget> widgetList = [];
@@ -377,36 +322,29 @@ class _ProjectDetail extends State<ProjectDetail> {
         autofocus: true,
         initialValue: translationKey,
         textInputAction: TextInputAction.next,
-        decoration: const InputDecoration(
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(5))),
-            filled: false,
-            hintText: "请输入Key",
-            labelText: "LanguageKey"),
+        decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入Key", labelText: "LanguageKey"),
         onChanged: (value) {
           translationKeyChange = value;
         },
       ),
     );
     widgetList.add(keyItem);
-    for (int i = 0; i < languageIdList.length; i++) {
-      String languageId = languageIdList[i];
+    for (int i = 0; i < languageList.length; i++) {
+      Language language = languageList[i];
+      var translation = translationIdContentMap?[language.languageId];
       Widget translationItem = SizedBox(
         width: 500,
         height: 80,
         child: TextFormField(
           autofocus: true,
-          initialValue: translationIdContentMap?[languageId] ?? " ",
+          initialValue: translation?.translationContent ?? " ",
           textInputAction: TextInputAction.next,
-          decoration: InputDecoration(
-              border: const OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(5))),
-              filled: false,
-              hintText: "请输入内容",
-              labelText: languageId),
+          decoration: InputDecoration(border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入内容", labelText: "${language.languageName}(${language.languageDes})"),
           onChanged: (value) {
-            translationIdContentMap?[languageId] = value;
-            translationIdContentMapChanged[languageId] = value;
+            if (null != translation && null != language.languageId) {
+              translation.translationContent = value;
+              translationIdContentMapChanged[language.languageId ?? 0] = translation;
+            }
           },
         ),
       );
@@ -438,7 +376,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             height: 30,
             child: TextButton(
               onPressed: () {
-                // translationIdContentMap[languageId] = translationTemp ?? "";
+                // translationIdContentMap[languageName] = translationTemp ?? "";
 
                 if (translationKeyChange.isNotEmpty) {
                   print("key:$translationKeyChange");
@@ -458,36 +396,54 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  String? importLanguageId = "";
+  String? importLanguageName = "";
+  String? importPlatform = "";
 
-  void showImportLanguageDialog() {
-    RenderBox? button =
-        importBtnKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
+  void showImportLanguageDialog(Function action) {
+    RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
           button.localToGlobal(Offset.zero, ancestor: overlay),
-          button.localToGlobal(button.size.bottomRight(Offset.zero),
-              ancestor: overlay),
+          button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
         ),
         Offset.zero & overlay.size,
       );
 
       List<PopupMenuEntry<String>> languageItemArray = [];
-      for (String languageId in languageIdList) {
-        languageItemArray.add(PopupMenuItem<String>(
-            value: languageId,
-            child: ListTile(
-                leading: const Icon(Icons.visibility),
-                title: Text(languageId))));
+      for (Language language in languageList) {
+        languageItemArray.add(PopupMenuItem<String>(value: "${language.languageName}(${language.languageDes})", child: ListTile(leading: const Icon(Icons.visibility), title: Text("${language.languageName}(${language.languageDes})"))));
       }
-      showMenu(context: context, position: position, items: languageItemArray)
-          .then<void>((value) {
+      showMenu(context: context, position: position, items: languageItemArray).then<void>((value) {
         if (!mounted) return null;
-        importLanguageId = value;
-        selectFile();
+        importLanguageName = value;
+        action(value);
+      });
+    }
+  }
+
+  void showSelectPlatformDialog(Function action) {
+    RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+    if (null != button && null != overlay) {
+      final RelativeRect position = RelativeRect.fromRect(
+        Rect.fromPoints(
+          button.localToGlobal(Offset.zero, ancestor: overlay),
+          button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+        ),
+        Offset.zero & overlay.size,
+      );
+
+      List<PopupMenuEntry<String>> languageItemArray = [];
+      List<String> platforms = ["android", "ios"];
+      for (String platform in platforms) {
+        languageItemArray.add(PopupMenuItem<String>(value: platform, child: ListTile(leading: const Icon(Icons.visibility), title: Text(platform))));
+      }
+      showMenu(context: context, position: position, items: languageItemArray).then<void>((value) {
+        if (!mounted) return null;
+        importPlatform = value;
+        action(value);
       });
     }
   }
@@ -509,14 +465,9 @@ class _ProjectDetail extends State<ProjectDetail> {
               child: TextFormField(
                 autofocus: true,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(5))),
-                    filled: false,
-                    hintText: "请输入语言id（如cn）",
-                    labelText: "语言id"),
+                decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言id（如cn）", labelText: "语言id"),
                 onChanged: (value) {
-                  _newLanguageId = value;
+                  _newlanguageName = value;
                 },
               ),
             ),
@@ -526,12 +477,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               child: TextFormField(
                 autofocus: true,
                 textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(5))),
-                    filled: false,
-                    hintText: "请输入语言名字（如中文）",
-                    labelText: "语言名字"),
+                decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言名字（如中文）", labelText: "语言名字"),
                 onChanged: (value) {
                   _newLanguageName = value;
                 },
@@ -566,11 +512,11 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  showDeleteLanguageDialog(String languageId) {
+  showDeleteLanguageDialog(String languageName) {
     return AlertDialog(
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text("删除语言$languageId？"),
+      title: Text("删除语言$languageName？"),
       actions: [
         SizedBox(
             width: 200,
@@ -585,8 +531,8 @@ class _ProjectDetail extends State<ProjectDetail> {
             height: 30,
             child: TextButton(
               onPressed: () {
-                print("onPressed:deleteLanguageRemote(languageId)");
-                deleteLanguageRemote(languageId);
+                print("onPressed:deleteLanguageRemote(languageName)");
+                deleteLanguageRemote(languageName);
                 Navigator.pop(context);
               },
               child: const Text(
@@ -598,8 +544,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  showDeleteTranslationDialog(
-      Map<String, String>? translationMap, String translationKey) {
+  showDeleteTranslationDialog(String translationKey) {
     return AlertDialog(
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -641,11 +586,15 @@ class _ProjectDetail extends State<ProjectDetail> {
     });
   }
 
-  void addTranslation(Map<String, String> result) {
+  void addTranslation(Map<int, Translation> result, int languageId) {
+    if (languageId == -1) {
+      print("languageId:$languageId");
+      return;
+    }
     if (result.isNotEmpty) {
       print("result.isNotEmpty");
       var languageIdList = result.keys.toList(growable: false);
-      String key = result[languageIdList[0]] ?? "";
+      String key = result[languageIdList[0]]?.translationKey ?? "";
       if (key.isEmpty) {
         print("key.isEmpty");
         return;
@@ -653,9 +602,8 @@ class _ProjectDetail extends State<ProjectDetail> {
       print("key:$key");
       List<Translation> translationList = [];
       for (int i = 1; i < languageIdList.length; i++) {
-        String languageId = languageIdList[i];
-        Translation translation = Translation(
-            key, languageId, result[languageId] ?? "", project.projectId);
+        int languageId = languageIdList[i];
+        Translation translation = Translation(key, languageId, result[languageId]?.translationContent ?? "", project.projectId);
         translationList.add(translation);
       }
       addTranslationRemote(translationList);
@@ -665,36 +613,30 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   void addLanguageRemote() {
-    WJHttp()
-        .addLanguage(
-            Language(_newLanguageId, _newLanguageName, project.projectId))
-        .then((value) {
+    WJHttp().addLanguage(Language(_newlanguageName, _newLanguageName, project.projectId)).then((value) {
       if (value.code == 200) {
         fetchTranslation();
       } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(value.msg)));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value.msg)));
       }
     });
   }
 
-  void deleteLanguageRemote(String languageId) {
+  void deleteLanguageRemote(String languageName) {
     print("deleteLanguageRemote");
-    Language language = Language(languageId, "languageName", project.projectId);
+    Language language = Language(languageName, "languageName", project.projectId);
     WJHttp().deleteLanguage(language).then((value) {
       if (value.code == 200) {
-        languageIdList.remove(languageId);
+        languageList.remove(languageName);
       }
       setState(() {});
     });
   }
 
   void deleteTranslationRemote(String translationKey) {
-    WJHttp()
-        .deleteTranslationByKey(translationKey, project.projectId)
-        .then((value) {
+    WJHttp().deleteTranslationByKey(translationKey, project.projectId).then((value) {
       if (value.code == 200) {
-        translationKeyContentMap.remove(translationKey);
+        translationRootMap.remove(translationKey);
       }
       setState(() {});
     });
@@ -702,9 +644,8 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void updateTranslation(Map<String, String> translationMap) {}
 
-  void selectFile() async {
-    FilePickerResult? result = await FilePicker.platform
-        .pickFiles(type: FileType.any, allowMultiple: false);
+  void selectFile(int languageId) async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
     if (result != null && result.files.isNotEmpty) {
       final fileBytes = result.files.first.bytes;
       String xmlString;
@@ -737,11 +678,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               String translationContent = childElement.innerText;
               print("$languageKey:$translationContent");
 
-              Translation translation = Translation(
-                  languageKey,
-                  importLanguageId ?? "",
-                  translationContent,
-                  project.projectId);
+              Translation translation = Translation(languageKey, languageId, translationContent, project.projectId);
               translations.add(translation);
             } else if (childElementName == "string-array") {
               String languageKey = childElement.attributes.first.value;
@@ -752,8 +689,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               }
 
               String translationContent = translationContentBuilder.toString();
-              var substring = translationContent.substring(
-                  0, translationContent.length - 1);
+              var substring = translationContent.substring(0, translationContent.length - 1);
               print("$languageKey:$substring");
             }
           }
@@ -763,50 +699,176 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  void exportTranslation(String platform) {
-    var keys = translationKeyContentMap.keys;
+  /// <string-array name="alarm_frequency">
+  ///         <item>No Restrictions</item>
+  ///         <item>1min</item>
+  ///         <item>3min</item>
+  ///         <item>5min</item>
+  /// </string-array>
+  ///
+  void exportTranslation(String platform, Language language) {
     StringBuffer sb = StringBuffer();
     if (platform == "android") {
       sb.write(''' <?xml version="1.0" encoding="utf-8"?>\n ''');
       sb.write(''' <resources>\n ''');
     }
-    for (var key in keys) {
-      var translationLanguageContentMap = translationKeyContentMap[key];
-      if (translationLanguageContentMap != null) {
-        var content = translationLanguageContentMap["cn"];
-        if (null != content) {
-          String trans;
-          if (platform == "ios") {
-            // trans = "\n\"$key\"=$content";
-            trans = ''' "$key"=$content\n ''';
-          } else {
-            //<string name="Device_charged">设备已通电</string>
-            trans = '''<string name="$key">$content</string>\n''';
+
+    for (Module module in modules) {
+      Map<String, Map<int, Translation>>? translationListInModule = translationRootMap[module.moduleId];
+      if (null != translationListInModule) {
+        for (Map<int, Translation> translationLanguageContentMap in translationListInModule.values) {
+          Translation? translation = translationLanguageContentMap[language.languageId];
+          if (translation != null) {
+            String trans;
+            if (translation.translationContent.contains("|")) {
+              //数组
+              var stringArray = translation.translationContent.split("|");
+              if (platform == "ios") {
+                // trans = "\n\"$key\"=$content";
+                for (int i = 0; i < stringArray.length; i++) {
+                  String str = stringArray[i];
+                  trans = '''"${translation.translationKey}"$i=$str\n''';
+                  print("trans$trans");
+                }
+              } else {
+                //<string name="Device_charged">设备已通电</string>
+                sb.write('''<string-array name="${translation.translationKey}\n">''');
+                for (int i = 0; i < stringArray.length; i++) {
+                  String str = stringArray[i];
+                  trans = '''<item>$str</item>\n''';
+                  print("trans$trans");
+                }
+                sb.write('''</string-array>''');
+              }
+            } else {
+              if (platform == "ios") {
+                // trans = "\n\"$key\"=$content";
+                trans = ''' "${translation.translationKey}"=${translation.translationContent}\n ''';
+              } else {
+                //<string name="Device_charged">设备已通电</string>
+                trans = '''<string name="${translation.translationKey}">${translation.translationContent}</string>\n''';
+              }
+              print("trans$trans");
+              sb.write(trans);
+            }
+
           }
-          print("trans$trans");
-          sb.write(trans);
         }
       }
     }
+
     if (platform == "android") {
       sb.write(''' </resources> ''');
     }
 
     var string = sb.toString();
-    var downloadName = "cn.txt";
+    var downloadName = "Localizable.strings";
     if (platform == "android") {
-      downloadName = "cn.xml";
+      downloadName = "strings.xml";
     }
-    final anchor =
-        AnchorElement(href: 'data:application/octet-stream;utf-8,$string')
-          ..target = 'blank';
-
-    anchor.download = downloadName;
-    var body = document.body;
-    if (null != body) {
-      body.append(anchor);
-    }
-    anchor.click();
-    anchor.remove();
+    // final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')
+    //   ..target = 'blank';
+    //
+    // anchor.download = downloadName;
+    // var body = document.body;
+    // if (null != body) {
+    //   body.append(anchor);
+    // }
+    // anchor.click();
+    // anchor.remove();
   }
+
+// Widget buildTranslationTable() {
+//   return Expanded(
+//     child: SingleChildScrollView(
+//       scrollDirection: Axis.vertical,
+//       child: SingleChildScrollView(
+//         scrollDirection: Axis.horizontal,
+//         child: DataTable(
+//           horizontalMargin: 10,
+//           showBottomBorder: true,
+//           columns: buildTableTitles(),
+//           rows: buildTranslationRows(),
+//           columnSpacing: 50,
+//         ),
+//       ),
+//     ),
+//   );
+// }
+//
+// List<DataColumn> buildTableTitles() {
+//   List<DataColumn> titles = [];
+//   List<String> titleItem = [];
+//   titleItem.add("LanguageKey");
+//   titleItem.addAll(languageNameList);
+//   for (int i = 0; i < titleItem.length; i++) {
+//     var element = titleItem[i];
+//     titles.add(DataColumn(
+//         label: GestureDetector(
+//       onLongPress: () {
+//         if (i == 0) {
+//           return;
+//         }
+//         showDialog(
+//             barrierDismissible: true,
+//             context: context,
+//             builder: (context) {
+//               return showDeleteLanguageDialog(element);
+//             });
+//       },
+//       child: SizedBox(
+//         width: 100,
+//         child: Text(
+//           element,
+//           style: const TextStyle(fontWeight: FontWeight.bold),
+//         ),
+//       ),
+//     )));
+//   }
+//
+//   return titles;
+// }
+
+// List<DataRow> buildTranslationRows() {
+//   List<DataRow> rows = [];
+//   for (var translationKey in translationKeyContentMap.keys) {
+//     rows.add(DataRow(cells: buildCells(translationKey)));
+//   }
+//   return rows;
+// }
+//
+//   List<DataCell> buildCells(String translationKey) {
+//     var translations = translationRootMap[translationKey];
+//     List<DataCell> cells = [];
+//     cells.add(DataCell(Text(translationKey), onDoubleTap: () {
+//       showDialog(
+//           barrierDismissible: true,
+//           context: context,
+//           builder: (context) {
+//             return showDeleteTranslationDialog(translations, translationKey);
+//           });
+//     }));
+//
+//     for (var i = 0; i < languageList.length; i++) {
+//       var languageName = languageList[i];
+//       var translation = translations?[languageName];
+//       cells.add(DataCell(
+//           ConstrainedBox(
+//               constraints: BoxConstraints(maxWidth: 200),
+//               child: Text(
+//                 translation ?? "",
+//                 overflow: TextOverflow.ellipsis,
+//               )), onTap: () async {
+//         var result = await showDialog(
+//             barrierDismissible: true,
+//             context: context,
+//             builder: (context) {
+//               return showTranslationEditDialog(translationKey, context, translations);
+//             });
+//         addTranslation(result);
+//       }));
+//     }
+//
+//     return cells;
+//   }
 }

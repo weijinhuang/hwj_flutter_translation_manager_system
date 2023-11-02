@@ -98,7 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget buildBody() {
-    if(projects.isEmpty){
+    if (projects.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
     return ListView.builder(
@@ -118,8 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Container(
                   width: 100,
                   alignment: Alignment.center,
-                  margin: const EdgeInsets.only(
-                      left: 100, right: 100, top: 50, bottom: 50),
+                  margin: const EdgeInsets.only(left: 100, right: 100, top: 50, bottom: 50),
                   child: Text(project.projectName),
                 ),
               ),
@@ -145,15 +144,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _toProjectDetailPage(Project project) async {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) => ProjectDetail(project)));
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectDetail(project)));
     // Navigator.of(context)
     //     .push(MaterialPageRoute(builder: (context) => DataTableDemoPage2(project)));
   }
 
   void _toAddProjectPage() async {
-    Project project = await Navigator.of(context)
-        .push(MaterialPageRoute(builder: (context) => const AddProjectPage()));
+    Project project = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProjectPage()));
     if (null != project) {
       fetchProjects();
     }
