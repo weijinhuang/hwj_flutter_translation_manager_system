@@ -50,10 +50,11 @@ class Translation {
   String translationContent;
   String projectId;
   int? moduleId;
+  bool? forceAdd = true;
 
   Translation(this.translationKey, this.languageId, this.translationContent,
       this.projectId,
-      {this.translationId, this.moduleId});
+      {this.translationId, this.moduleId,this.forceAdd});
 
   factory Translation.fromJson(Map<String, dynamic> json) =>
       _$TranslationFromJson(json);
@@ -88,6 +89,11 @@ class Language {
       _$LanguageFromJson(json);
 
   Map<String, dynamic> toJson() => _$LanguageToJson(this);
+
+  @override
+  String toString() {
+    return "$languageName($languageDes)";
+  }
 }
 
 @JsonSerializable()

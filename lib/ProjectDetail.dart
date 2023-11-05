@@ -1,6 +1,6 @@
 import 'dart:collection';
 import 'dart:convert';
-// import 'dart:html';
+import 'dart:html';
 
 import 'dart:io' as io;
 
@@ -95,7 +95,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 builder: (context) {
                   return showTranslationEditDialog(null, context, null);
                 });
-            addTranslation(result, 1);
+           addTranslationRemote(result.toList());
           },
           child: const Icon(Icons.add),
         ),
@@ -211,7 +211,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     Widget textItem = buildTranslationText("Key", FontWeight.bold);
     widgetList.add(textItem);
     for (Language language in languageList) {
-      Widget textItem = buildTranslationText(language.languageName, FontWeight.bold);
+      Widget textItem = buildTranslationText("${language.languageDes}(${language.languageName})", FontWeight.bold);
       widgetList.add(textItem);
     }
     return Flex(
@@ -239,7 +239,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       ));
       //翻译列表
       for (Language language in languageList) {
-        Widget contentItem = buildTranslationText(languageTranslationMap[language.languageId]?.translationContent ?? "NULL", null);
+        Widget contentItem = buildTranslationText(languageTranslationMap[language.languageId]?.translationContent ?? "", null);
         widgetList.add(GestureDetector(
           child: contentItem,
           onTap: () async {
@@ -250,7 +250,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                   return showTranslationEditDialog(translationKey, context, languageTranslationMap);
                 });
 
-            addTranslation(result, language.languageId ?? -1);
+            addTranslationRemote(result.toList());
           },
         ));
       }
@@ -262,7 +262,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   Widget buildTranslationText(String text, FontWeight? fontWeight) {
-    print("buildTranslationText $text");
+    // print("buildTranslationText $text");
     Container textItem = Container(
         width: 200,
         margin: const EdgeInsets.only(left: 5, right: 5),
@@ -301,10 +301,10 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   AlertDialog showTranslationEditDialog(String? translationKey, BuildContext context, Map<int, Translation>? translationIdContentMap) {
-    Map<int, Translation> translationIdContentMapChanged = HashMap<int, Translation>();
-    // translationIdContentMapChanged[LANGUAGE_KEY] = translationKey ?? "";
+    Set<Translation> translationChangedList = {};
+    // translationChangedList[LANGUAGE_KEY] = translationKey ?? "";
     String? titleText;
-    translationKeyChange = translationKey??"";
+    translationKeyChange = translationKey ?? "";
     if (translationKey == null) {
       titleText = "添加语言";
     } else {
@@ -324,6 +324,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         textInputAction: TextInputAction.next,
         decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入Key", labelText: "LanguageKey"),
         onChanged: (value) {
+          print("onChange:translationKeyChange:$value");
           translationKeyChange = value;
         },
       ),
@@ -341,9 +342,13 @@ class _ProjectDetail extends State<ProjectDetail> {
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入内容", labelText: "${language.languageName}(${language.languageDes})"),
           onChanged: (value) {
-            if (null != translation && null != language.languageId) {
+            if (null != translation) {
+              print("onChange:translation.translationContent:$value");
               translation.translationContent = value;
-              translationIdContentMapChanged[language.languageId ?? 0] = translation;
+              translationChangedList.add(translation);
+            } else {
+              Translation newTranslation = Translation(translationKeyChange, language.languageId ?? -1, value, project.projectId,moduleId: mCurrentSelectedModule?.moduleId??0,forceAdd: true);
+              translationChangedList.add(newTranslation);
             }
           },
         ),
@@ -381,7 +386,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 if (translationKeyChange.isNotEmpty) {
                   print("key:$translationKeyChange");
                   setState(() {});
-                  Navigator.of(context).pop(translationIdContentMapChanged);
+                  Navigator.of(context).pop(translationChangedList);
                 } else {
                   print("key为空");
                   Navigator.of(context).pop(null);
@@ -396,7 +401,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  String? importLanguageName = "";
+  Language? importLanguageName = null;
   String? importPlatform = "";
 
   void showImportLanguageDialog(Function action) {
@@ -411,9 +416,9 @@ class _ProjectDetail extends State<ProjectDetail> {
         Offset.zero & overlay.size,
       );
 
-      List<PopupMenuEntry<String>> languageItemArray = [];
+      List<PopupMenuEntry<Language>> languageItemArray = [];
       for (Language language in languageList) {
-        languageItemArray.add(PopupMenuItem<String>(value: "${language.languageName}(${language.languageDes})", child: ListTile(leading: const Icon(Icons.visibility), title: Text("${language.languageName}(${language.languageDes})"))));
+        languageItemArray.add(PopupMenuItem<Language>(value: language, child: ListTile(leading: const Icon(Icons.visibility), title: Text("${language.languageName}(${language.languageDes})"))));
       }
       showMenu(context: context, position: position, items: languageItemArray).then<void>((value) {
         if (!mounted) return null;
@@ -600,7 +605,6 @@ class _ProjectDetail extends State<ProjectDetail> {
         return;
       }
       print("key:$key");
-      List<Translation> translationList = [];
       for (int i = 1; i < languageIdList.length; i++) {
         int languageId = languageIdList[i];
         Translation translation = Translation(key, languageId, result[languageId]?.translationContent ?? "", project.projectId);
@@ -642,9 +646,18 @@ class _ProjectDetail extends State<ProjectDetail> {
     });
   }
 
-  void updateTranslation(Map<String, String> translationMap) {}
+  void updateTranslation(Set<Translation> translationSet) {
+    WJHttp().addTranslations(translationSet.toList(growable: false)).then((value) {
+      if (value.code == 200) {
+        print("更新翻译成功");
+      } else {
+        print("更新翻译失败，失败列表:${value.data.length}");
+      }
+      fetchTranslation();
+    });
+  }
 
-  void selectFile(int languageId) async {
+  void selectFile(Language language) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
     if (result != null && result.files.isNotEmpty) {
       final fileBytes = result.files.first.bytes;
@@ -678,7 +691,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               String translationContent = childElement.innerText;
               print("$languageKey:$translationContent");
 
-              Translation translation = Translation(languageKey, languageId, translationContent, project.projectId);
+              Translation translation = Translation(languageKey, language.languageId??0, translationContent, project.projectId);
               translations.add(translation);
             } else if (childElementName == "string-array") {
               String languageKey = childElement.attributes.first.value;
@@ -751,7 +764,6 @@ class _ProjectDetail extends State<ProjectDetail> {
               print("trans$trans");
               sb.write(trans);
             }
-
           }
         }
       }

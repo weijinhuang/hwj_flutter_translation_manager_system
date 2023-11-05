@@ -141,6 +141,7 @@ class WJHttp {
     }
   }
 
+
   Future<CommonResponse<void>> addTranslation(Translation translation) async {
     print("添加翻译");
     final response = await http.post(
@@ -176,6 +177,25 @@ class WJHttp {
     }
   }
 
+  Future<CommonListResponse<Translation>> updateTranslations(List<Translation> translation) async {
+    String json = jsonEncode(translation.map((e) => e.toJson()).toList(growable: false));
+    print("添加翻译列表:$json");
+    final response = await http.post(
+        Uri.parse("http://192.168.3"
+            ".188:8080/updateTranslations"),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: json);
+    if (response.statusCode == 200) {
+      return CommonListResponse<Translation>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
+        return Translation.fromJson(json);
+      });
+    } else {
+      throw Exception("net error");
+    }
+  }
+
   Future<CommonResponse<void>> deleteTranslationByKey(String translationKey, String projectId) async {
     print("删除翻译");
     final response = await http.post(
@@ -184,10 +204,10 @@ class WJHttp {
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
-        body: {
+        body: jsonEncode({
           "translationKey": translationKey,
           "projectId": projectId
-        });
+        }));
     if (response.statusCode == 200) {
       return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
     } else {
