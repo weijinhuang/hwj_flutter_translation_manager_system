@@ -95,7 +95,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 builder: (context) {
                   return showTranslationEditDialog(null, context, null);
                 });
-           addTranslationRemote(result.toList());
+            addTranslationRemote(result.toList());
           },
           child: const Icon(Icons.add),
         ),
@@ -212,7 +212,18 @@ class _ProjectDetail extends State<ProjectDetail> {
     widgetList.add(textItem);
     for (Language language in languageList) {
       Widget textItem = buildTranslationText("${language.languageDes}(${language.languageName})", FontWeight.bold);
-      widgetList.add(textItem);
+      GestureDetector gestureDetector = GestureDetector(
+          child: textItem,
+          onDoubleTap: () {
+            showDialog(
+                barrierDismissible: true,
+                context: context,
+                builder: (context) {
+                  return  showDeleteLanguageDialog(language);
+                });
+
+          });
+      widgetList.add(gestureDetector);
     }
     return Flex(
       direction: Axis.horizontal,
@@ -264,8 +275,9 @@ class _ProjectDetail extends State<ProjectDetail> {
   Widget buildTranslationText(String text, FontWeight? fontWeight) {
     // print("buildTranslationText $text");
     Container textItem = Container(
+        color: Colors.white70,
         width: 200,
-        margin: const EdgeInsets.only(left: 5, right: 5),
+        margin: const EdgeInsets.only(left: 5, right: 5, top: 1, bottom: 1),
         height: 40,
         alignment: Alignment.centerLeft,
         child: Text(
@@ -347,7 +359,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               translation.translationContent = value;
               translationChangedList.add(translation);
             } else {
-              Translation newTranslation = Translation(translationKeyChange, language.languageId ?? -1, value, project.projectId,moduleId: mCurrentSelectedModule?.moduleId??0,forceAdd: true);
+              Translation newTranslation = Translation(translationKeyChange, language.languageId ?? -1, value, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: true);
               translationChangedList.add(newTranslation);
             }
           },
@@ -517,11 +529,11 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  showDeleteLanguageDialog(String languageName) {
+  showDeleteLanguageDialog(Language language) {
     return AlertDialog(
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text("删除语言$languageName？"),
+      title: Text("删除语言$language？"),
       actions: [
         SizedBox(
             width: 200,
@@ -537,7 +549,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             child: TextButton(
               onPressed: () {
                 print("onPressed:deleteLanguageRemote(languageName)");
-                deleteLanguageRemote(languageName);
+                deleteLanguageRemote(language);
                 Navigator.pop(context);
               },
               child: const Text(
@@ -626,12 +638,11 @@ class _ProjectDetail extends State<ProjectDetail> {
     });
   }
 
-  void deleteLanguageRemote(String languageName) {
+  void deleteLanguageRemote(Language language) {
     print("deleteLanguageRemote");
-    Language language = Language(languageName, "languageName", project.projectId);
     WJHttp().deleteLanguage(language).then((value) {
       if (value.code == 200) {
-        languageList.remove(languageName);
+        languageList.remove(language);
       }
       setState(() {});
     });
@@ -691,7 +702,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               String translationContent = childElement.innerText;
               print("$languageKey:$translationContent");
 
-              Translation translation = Translation(languageKey, language.languageId??0, translationContent, project.projectId);
+              Translation translation = Translation(languageKey, language.languageId ?? 0, translationContent, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
               translations.add(translation);
             } else if (childElementName == "string-array") {
               String languageKey = childElement.attributes.first.value;
