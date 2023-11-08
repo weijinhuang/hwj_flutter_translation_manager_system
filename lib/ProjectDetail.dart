@@ -219,9 +219,8 @@ class _ProjectDetail extends State<ProjectDetail> {
                 barrierDismissible: true,
                 context: context,
                 builder: (context) {
-                  return  showDeleteLanguageDialog(language);
+                  return showDeleteLanguageDialog(language);
                 });
-
           });
       widgetList.add(gestureDetector);
     }
@@ -418,7 +417,10 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void showImportLanguageDialog(Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay
+        .of(context)
+        .context
+        .findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
@@ -442,7 +444,10 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void showSelectPlatformDialog(Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay
+        .of(context)
+        .context
+        .findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
@@ -651,7 +656,13 @@ class _ProjectDetail extends State<ProjectDetail> {
   void deleteTranslationRemote(String translationKey) {
     WJHttp().deleteTranslationByKey(translationKey, project.projectId).then((value) {
       if (value.code == 200) {
-        translationRootMap.remove(translationKey);
+        int? moduleId = mCurrentSelectedModule?.moduleId;
+        if (null != moduleId) {
+          var translationKeyMap = translationRootMap[moduleId];
+          if(null != translationKeyMap) {
+            translationKeyMap.remove(translationKey);
+          }
+        }
       }
       setState(() {});
     });
