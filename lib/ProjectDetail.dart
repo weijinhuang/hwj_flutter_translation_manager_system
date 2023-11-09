@@ -151,33 +151,32 @@ class _ProjectDetail extends State<ProjectDetail> {
     //   return const Center(child: CircularProgressIndicator());
     // }
 
-    return Container(
-      margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 700,
-                height: 40,
-                child: TextFormField(
-                  autofocus: true,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
-                  onChanged: (value) {
-                    project.projectName = value;
-                  },
+    return Container(margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                SizedBox(
+                  width: 700,
+                  height: 40,
+                  child: TextFormField(
+                    autofocus: true,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
+                    onChanged: (value) {
+                      project.projectName = value;
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-          // buildTranslationTable(),
-          buildLanguageListTitle(),
-          buildTranslationList(mCurrentSelectedModule)
-        ],
-      ),
-    );
+              ],
+            ),
+            // buildTranslationTable(),
+            buildLanguageListTitle(),
+            buildTranslationList(mCurrentSelectedModule)
+          ],
+        ),
+        );
   }
 
   Widget buildTranslationList(Module? module) {
@@ -196,11 +195,18 @@ class _ProjectDetail extends State<ProjectDetail> {
       }
     }
     return Expanded(
-      child: ListView.builder(
-        itemBuilder: (context, index) {
-          return buildTranslationListItem(translationList[index]);
-        },
-        itemCount: translationList.length,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        itemExtent: 2160,
+        children: [
+          ListView.builder(
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              return buildTranslationListItem(translationList[index]);
+            },
+            itemCount: translationList.length,
+          )
+        ],
       ),
     );
   }
@@ -417,10 +423,7 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void showImportLanguageDialog(Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? overlay = Overlay
-        .of(context)
-        .context
-        .findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
@@ -444,10 +447,7 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void showSelectPlatformDialog(Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? overlay = Overlay
-        .of(context)
-        .context
-        .findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
@@ -608,30 +608,30 @@ class _ProjectDetail extends State<ProjectDetail> {
     });
   }
 
-  void addTranslation(Map<int, Translation> result, int languageId) {
-    if (languageId == -1) {
-      print("languageId:$languageId");
-      return;
-    }
-    if (result.isNotEmpty) {
-      print("result.isNotEmpty");
-      var languageIdList = result.keys.toList(growable: false);
-      String key = result[languageIdList[0]]?.translationKey ?? "";
-      if (key.isEmpty) {
-        print("key.isEmpty");
-        return;
-      }
-      print("key:$key");
-      for (int i = 1; i < languageIdList.length; i++) {
-        int languageId = languageIdList[i];
-        Translation translation = Translation(key, languageId, result[languageId]?.translationContent ?? "", project.projectId);
-        translationList.add(translation);
-      }
-      addTranslationRemote(translationList);
-    } else {
-      print("result.isEmpty");
-    }
-  }
+  // void addTranslation(Map<int, Translation> result, int languageId) {
+  //   if (languageId == -1) {
+  //     print("languageId:$languageId");
+  //     return;
+  //   }
+  //   if (result.isNotEmpty) {
+  //     print("result.isNotEmpty");
+  //     var languageIdList = result.keys.toList(growable: false);
+  //     String key = result[languageIdList[0]]?.translationKey ?? "";
+  //     if (key.isEmpty) {
+  //       print("key.isEmpty");
+  //       return;
+  //     }
+  //     print("key:$key");
+  //     for (int i = 1; i < languageIdList.length; i++) {
+  //       int languageId = languageIdList[i];
+  //       Translation translation = Translation(key, languageId, result[languageId]?.translationContent ?? "", project.projectId);
+  //       translationList.add(translation);
+  //     }
+  //     addTranslationRemote(translationList);
+  //   } else {
+  //     print("result.isEmpty");
+  //   }
+  // }
 
   void addLanguageRemote() {
     WJHttp().addLanguage(Language(_newlanguageName, _newLanguageName, project.projectId)).then((value) {
@@ -659,7 +659,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         int? moduleId = mCurrentSelectedModule?.moduleId;
         if (null != moduleId) {
           var translationKeyMap = translationRootMap[moduleId];
-          if(null != translationKeyMap) {
+          if (null != translationKeyMap) {
             translationKeyMap.remove(translationKey);
           }
         }
