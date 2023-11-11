@@ -151,32 +151,33 @@ class _ProjectDetail extends State<ProjectDetail> {
     //   return const Center(child: CircularProgressIndicator());
     // }
 
-    return Container(margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 700,
-                  height: 40,
-                  child: TextFormField(
-                    autofocus: true,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
-                    onChanged: (value) {
-                      project.projectName = value;
-                    },
-                  ),
+    return Container(
+      margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 700,
+                height: 40,
+                child: TextFormField(
+                  autofocus: true,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
+                  onChanged: (value) {
+                    project.projectName = value;
+                  },
                 ),
-              ],
-            ),
-            // buildTranslationTable(),
-            buildLanguageListTitle(),
-            buildTranslationList(mCurrentSelectedModule)
-          ],
-        ),
-        );
+              ),
+            ],
+          ),
+          // buildTranslationTable(),
+          buildLanguageListTitle(),
+          buildTranslationList(mCurrentSelectedModule)
+        ],
+      ),
+    );
   }
 
   Widget buildTranslationList(Module? module) {
@@ -378,10 +379,36 @@ class _ProjectDetail extends State<ProjectDetail> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(titleText),
       content: SizedBox(
-        height: 500,
-        width: 500,
-        child: ListView(
-          children: widgetList,
+        width: 1000,
+        child: Row(
+          children: [
+            Expanded(
+              child: ListView(
+                shrinkWrap: true,
+                children: widgetList,
+              ),
+            ),
+            Container(
+              decoration: BoxDecoration(),
+              width: 300,
+              height: 300,
+              child: TextFormField(
+                autofocus: true,
+                initialValue: " aaaaaaa",
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  isCollapsed: true,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), //内容内边距，影响高度
+                  border: OutlineInputBorder(
+                    gapPadding: 0,
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: false,
+                ),
+                onChanged: (value) {},
+              ),
+            ),
+          ],
         ),
       ),
       actions: [
@@ -724,9 +751,10 @@ class _ProjectDetail extends State<ProjectDetail> {
               }
 
               String translationContent = translationContentBuilder.toString();
-              var substring = translationContent.substring(0, translationContent.length - 1);
-              print("$languageKey:$substring");
+              Translation translation = Translation(languageKey, language.languageId ?? 0, translationContent, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
+              translations.add(translation);
             }
+
           }
         }
       }
@@ -744,8 +772,8 @@ class _ProjectDetail extends State<ProjectDetail> {
   void exportTranslation(String platform, Language language) {
     StringBuffer sb = StringBuffer();
     if (platform == "android") {
-      sb.write(''' <?xml version="1.0" encoding="utf-8"?>\n ''');
-      sb.write(''' <resources>\n ''');
+      sb.write('''<?xml version="1.0" encoding="utf-8"?>\n ''');
+      sb.write('''<resources>\n''');
     }
 
     for (Module module in modules) {
@@ -767,21 +795,21 @@ class _ProjectDetail extends State<ProjectDetail> {
                 }
               } else {
                 //<string name="Device_charged">设备已通电</string>
-                sb.write('''<string-array name="${translation.translationKey}\n">''');
+                sb.write('''  <string-array name="${translation.translationKey}">\n''');
                 for (int i = 0; i < stringArray.length; i++) {
                   String str = stringArray[i];
-                  trans = '''<item>$str</item>\n''';
-                  print("trans$trans");
+                  trans = '''   <item>$str</item>\n''';
+                  sb.write(trans);
                 }
-                sb.write('''</string-array>''');
+                sb.write('''  </string-array>''');
               }
             } else {
               if (platform == "ios") {
                 // trans = "\n\"$key\"=$content";
-                trans = ''' "${translation.translationKey}"=${translation.translationContent}\n ''';
+                trans = ''' "${translation.translationKey}"=${translation.translationContent}\n''';
               } else {
                 //<string name="Device_charged">设备已通电</string>
-                trans = '''<string name="${translation.translationKey}">${translation.translationContent}</string>\n''';
+                trans = ''' <string name="${translation.translationKey}">${translation.translationContent}</string>\n''';
               }
               print("trans$trans");
               sb.write(trans);
@@ -792,7 +820,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
 
     if (platform == "android") {
-      sb.write(''' </resources> ''');
+      sb.write('''\n</resources> ''');
     }
 
     var string = sb.toString();
@@ -800,16 +828,15 @@ class _ProjectDetail extends State<ProjectDetail> {
     if (platform == "android") {
       downloadName = "strings.xml";
     }
-    // final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')
-    //   ..target = 'blank';
-    //
-    // anchor.download = downloadName;
-    // var body = document.body;
-    // if (null != body) {
-    //   body.append(anchor);
-    // }
-    // anchor.click();
-    // anchor.remove();
+    final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')..target = 'blank';
+
+    anchor.download = downloadName;
+    var body = document.body;
+    if (null != body) {
+      body.append(anchor);
+    }
+    anchor.click();
+    anchor.remove();
   }
 
 // Widget buildTranslationTable() {
