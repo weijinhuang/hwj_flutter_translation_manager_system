@@ -35,11 +35,32 @@ class _ProjectDetail extends State<ProjectDetail> {
   String _newlanguageName = "";
   String _newLanguageName = "";
   String translationKeyChange = "";
+  ScrollController titleController = ScrollController();
+  ScrollController translationListController = ScrollController();
+
+  bool titleScrolling = false;
+  bool contentScrolling = false;
 
   @override
   void initState() {
     super.initState();
     fetchTranslation();
+    titleController.addListener(() {
+      // if (contentScrolling) {
+      //   return;
+      // }
+      // titleScrolling = true;
+      // print("titleController scroll ${titleController.offset}");
+      // translationListController.jumpTo(titleController.offset);
+    });
+    translationListController.addListener(() {
+      if (titleScrolling) {
+        return;
+      }
+      contentScrolling = true;
+      print("translationListController scroll ${translationListController.offset}");
+      titleController.jumpTo(translationListController.offset);
+    });
   }
 
   void fetchTranslation() {
@@ -154,27 +175,24 @@ class _ProjectDetail extends State<ProjectDetail> {
     return Container(
       margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
       child: Column(
+
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              SizedBox(
-                width: 700,
-                height: 40,
-                child: TextFormField(
-                  autofocus: true,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
-                  onChanged: (value) {
-                    project.projectName = value;
-                  },
-                ),
-              ),
-            ],
+          SizedBox(
+            width: 700,
+            height: 40,
+            child: TextFormField(
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
+              onChanged: (value) {
+                // project.projectName = value;
+              },
+            ),
           ),
           // buildTranslationTable(),
           buildLanguageListTitle(),
-          buildTranslationList(mCurrentSelectedModule)
+          buildTranslationList(mCurrentSelectedModule),
         ],
       ),
     );
@@ -197,11 +215,11 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
     return Expanded(
       child: ListView(
+        controller: translationListController,
         scrollDirection: Axis.horizontal,
-        itemExtent: 2160,
+        itemExtent: 210 * (languageList.length + 1),
         children: [
           ListView.builder(
-            shrinkWrap: true,
             itemBuilder: (context, index) {
               return buildTranslationListItem(translationList[index]);
             },
@@ -231,10 +249,19 @@ class _ProjectDetail extends State<ProjectDetail> {
           });
       widgetList.add(gestureDetector);
     }
-    return Flex(
-      direction: Axis.horizontal,
-      children: widgetList,
-    );
+
+    return Flexible(
+       child: SizedBox(
+         height: 40,
+         child: GestureDetector(
+           child: ListView(
+             children: widgetList,
+             physics: NeverScrollableScrollPhysics(),
+             scrollDirection: Axis.horizontal,
+             controller: titleController,
+           ),
+         ),
+       ));
   }
 
   Widget buildTranslationListItem(Map<int, Translation> languageTranslationMap) {
@@ -289,6 +316,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         child: Text(
           text,
           maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(fontWeight: fontWeight),
         ));
     return textItem;
@@ -356,6 +384,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         height: 80,
         child: TextFormField(
           autofocus: true,
+          maxLines: null,
           initialValue: translation?.translationContent ?? " ",
           textInputAction: TextInputAction.next,
           decoration: InputDecoration(border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入内容", labelText: "${language.languageName}(${language.languageDes})"),
@@ -381,6 +410,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       content: SizedBox(
         width: 1000,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             Expanded(
               child: ListView(
@@ -388,26 +418,26 @@ class _ProjectDetail extends State<ProjectDetail> {
                 children: widgetList,
               ),
             ),
-            Container(
-              decoration: BoxDecoration(),
-              width: 300,
-              height: 300,
-              child: TextFormField(
-                autofocus: true,
-                initialValue: " aaaaaaa",
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  isCollapsed: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), //内容内边距，影响高度
-                  border: OutlineInputBorder(
-                    gapPadding: 0,
-                    borderSide: BorderSide.none,
-                  ),
-                  filled: false,
-                ),
-                onChanged: (value) {},
-              ),
-            ),
+            // Container(
+            //   decoration: BoxDecoration(),
+            //   width: 500,
+            //   child: TextFormField(
+            //     autofocus: true,
+            //     maxLines: null,
+            //     initialValue:"",
+            //     textInputAction: TextInputAction.next,
+            //     decoration: const InputDecoration(
+            //       isCollapsed: true,
+            //       contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10), //内容内边距，影响高度
+            //       border: OutlineInputBorder(
+            //         gapPadding: 0,
+            //         borderSide: BorderSide.none,
+            //       ),
+            //       filled: false,
+            //     ),
+            //     onChanged: (value) {},
+            //   ),
+            // ),
           ],
         ),
       ),
@@ -754,7 +784,6 @@ class _ProjectDetail extends State<ProjectDetail> {
               Translation translation = Translation(languageKey, language.languageId ?? 0, translationContent, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
               translations.add(translation);
             }
-
           }
         }
       }
