@@ -5,6 +5,7 @@ import 'dart:html';
 import 'dart:io' as io;
 
 import 'package:flutter/material.dart';
+import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
 import 'package:file_picker/file_picker.dart';
@@ -173,9 +174,10 @@ class _ProjectDetail extends State<ProjectDetail> {
     // }
 
     return Container(
+      color: Colors.blueGrey,
       margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
       child: Column(
-
+        mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
@@ -251,17 +253,18 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
 
     return Flexible(
-       child: SizedBox(
-         height: 40,
-         child: GestureDetector(
-           child: ListView(
-             children: widgetList,
-             physics: NeverScrollableScrollPhysics(),
-             scrollDirection: Axis.horizontal,
-             controller: titleController,
-           ),
-         ),
-       ));
+        child: Container(
+      color: Colors.amberAccent,
+      height: 40,
+      child: GestureDetector(
+        child: ListView(
+          children: widgetList,
+          physics: NeverScrollableScrollPhysics(),
+          scrollDirection: Axis.horizontal,
+          controller: titleController,
+        ),
+      ),
+    ));
   }
 
   Widget buildTranslationListItem(Map<int, Translation> languageTranslationMap) {
@@ -392,6 +395,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             if (null != translation) {
               print("onChange:translation.translationContent:$value");
               translation.translationContent = value;
+              translation.forceAdd = true;
               translationChangedList.add(translation);
             } else {
               Translation newTranslation = Translation(translationKeyChange, language.languageId ?? -1, value, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: true);
@@ -658,10 +662,14 @@ class _ProjectDetail extends State<ProjectDetail> {
     WJHttp().addTranslations(translationList).then((value) {
       if (value.code == 200) {
         print("添加翻译成功");
+        setState(() {});
+        if (value.data != null && value.data.isNotEmpty) {
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => TranslationComparePage(value.data)));
+        }
       } else {
         print("添加翻译失败，失败列表:${value.data.length}");
       }
-      fetchTranslation();
+      // fetchTranslation();
     });
   }
 

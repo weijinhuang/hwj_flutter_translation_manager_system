@@ -54,6 +54,7 @@ Translation _$TranslationFromJson(Map<String, dynamic> json) => Translation(
       translationId: json['translationId'] as int?,
       moduleId: json['moduleId'] as int?,
       forceAdd: json['forceAdd'] as bool?,
+      oldTranslationContent: json['oldTranslationContent'] as String?,
     );
 
 Map<String, dynamic> _$TranslationToJson(Translation instance) =>
@@ -65,6 +66,7 @@ Map<String, dynamic> _$TranslationToJson(Translation instance) =>
       'projectId': instance.projectId,
       'moduleId': instance.moduleId,
       'forceAdd': instance.forceAdd,
+      'oldTranslationContent': instance.oldTranslationContent,
     };
 
 Project _$ProjectFromJson(Map<String, dynamic> json) => Project(

@@ -51,10 +51,11 @@ class Translation {
   String projectId;
   int? moduleId;
   bool? forceAdd = true;
+  String? oldTranslationContent;
 
   Translation(this.translationKey, this.languageId, this.translationContent,
       this.projectId,
-      {this.translationId, this.moduleId,this.forceAdd});
+      {this.translationId, this.moduleId,this.forceAdd,this.oldTranslationContent});
 
   factory Translation.fromJson(Map<String, dynamic> json) =>
       _$TranslationFromJson(json);
