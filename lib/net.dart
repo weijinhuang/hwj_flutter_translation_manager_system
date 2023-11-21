@@ -52,6 +52,7 @@ class Translation {
   int? moduleId;
   bool? forceAdd = true;
   String? oldTranslationContent;
+  String? selectedTranslationContent;
 
   Translation(this.translationKey, this.languageId, this.translationContent,
       this.projectId,
