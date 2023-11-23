@@ -106,23 +106,69 @@ class _MyHomePageState extends State<MyHomePage> {
         var project = projects[index];
         return Container(
           margin: const EdgeInsets.only(top: 50),
-          child: GestureDetector(
-            onTap: () {
-              _toProjectDetailPage(project);
-            },
-            child: Center(
-              child: Card(
+          child: Center(
+            child: Stack(alignment: AlignmentDirectional(1, -1), children: [
+              Card(
                 elevation: 10,
                 shadowColor: Colors.blueAccent,
                 clipBehavior: Clip.antiAlias,
-                child: Container(
-                  width: 100,
-                  alignment: Alignment.center,
-                  margin: const EdgeInsets.only(left: 100, right: 100, top: 50, bottom: 50),
-                  child: Text(project.projectName),
+                child: GestureDetector(
+                  onTap: () {
+                    _toProjectDetailPage(project);
+                  },
+                  child: Container(
+                    width: 100,
+                    alignment: Alignment.center,
+                    margin: const EdgeInsets.only(left: 100, right: 100, top: 50, bottom: 50),
+                    child: Text(project.projectName),
+                  ),
                 ),
               ),
-            ),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                      barrierDismissible: true,
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text("是否删除项目？"),
+                          content: const Text("删除项目会把该项目所有数据清空！"),
+                          actions: [
+                            GestureDetector(
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 10, top: 5, right: 10, bottom: 5),
+                                child: const Text("取消"),
+                              ),
+                              onTap: () {
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            GestureDetector(
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 10, top: 5, right: 10, bottom: 5),
+                                child: const Text(
+                                  "确定",
+                                  style: TextStyle(color: Colors.red),
+                                ),
+                              ),
+                              onTap: () {
+                                deleteProjectRemote(project);
+                                Navigator.of(context).pop();
+                              },
+                            )
+                          ],
+                        );
+                      });
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(5),
+                  child: const Icon(
+                    Icons.remove,
+                    color: Colors.blueGrey,
+                  ),
+                ),
+              )
+            ]),
           ),
         );
       },
@@ -154,5 +200,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if (null != project) {
       fetchProjects();
     }
+  }
+
+  void deleteProjectRemote(Project project) {
+    WJHttp().deleteModule(module)
   }
 }
