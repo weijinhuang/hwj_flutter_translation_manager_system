@@ -13,7 +13,7 @@ class WJHttp {
     }
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/getAllTranslation"),
+            ".1:8080/getAllTranslation"),
         headers: <String, String>{
           "Access-Control-Allow-Origin": "*",
           'Content-Type': 'application/json; charset=UTF-8',
@@ -30,7 +30,7 @@ class WJHttp {
 
   Future<CommonListResponse<Project>> fetchProjects() async {
     final response = await http.get(Uri.parse("http://127.0.0"
-        ".188:8080/getAllProjects"));
+        ".1:8080/getAllProjects"));
     print(response.body);
     if (response.statusCode == 200) {
       return CommonListResponse<Project>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Project.fromJson(json));
@@ -43,7 +43,24 @@ class WJHttp {
     print("addProject");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/addProject"),
+            ".1:8080/addProject"),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(project.toJson()));
+    if (response.statusCode == 200) {
+      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
+    } else {
+      throw Exception("net error");
+    }
+  }
+
+
+  Future<CommonResponse<void>> deleteProject(Project project) async {
+    print("deleteProject");
+    final response = await http.post(
+        Uri.parse("http://127.0.0"
+            ".1:8080/deleteProject"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -59,7 +76,7 @@ class WJHttp {
     print("addLanguage");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/addLanguage"),
+            ".1:8080/addLanguage"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -75,7 +92,7 @@ class WJHttp {
     print("addLanguage");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/addModule"),
+            ".1:8080/addModule"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -91,7 +108,7 @@ class WJHttp {
     print("deleteLanguage");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/deleteLanguage"),
+            ".1:8080/deleteLanguage"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -107,7 +124,7 @@ class WJHttp {
     print("deleteModule");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/deleteModule"),
+            ".1:8080/deleteModule"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -121,7 +138,7 @@ class WJHttp {
 
   Future<CommonListResponse<Language>> fetchLanguageList(String projectId) async {
     final response = await http.get(Uri.parse("http://127.0.0"
-        ".188:8080/getLanguageList/$projectId"));
+        ".1:8080/getLanguageList/$projectId"));
     print("查询语言列表${response.body}");
     if (response.statusCode == 200) {
       return CommonListResponse<Language>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Language.fromJson(json));
@@ -132,7 +149,7 @@ class WJHttp {
 
   Future<CommonListResponse<Module>> fetchModuleList(String projectId) async {
     final response = await http.get(Uri.parse("http://127.0.0"
-        ".188:8080/getAllModules/$projectId"));
+        ".1:8080/getAllModules/$projectId"));
     print("查询Module列表${response.body}");
     if (response.statusCode == 200) {
       return CommonListResponse<Module>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Module.fromJson(json));
@@ -146,7 +163,7 @@ class WJHttp {
     print("添加翻译");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/addTranslation"),
+            ".1:8080/addTranslation"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -163,7 +180,7 @@ class WJHttp {
     print("添加翻译列表:$json");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/addTranslations"),
+            ".1:8080/addTranslations"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -182,7 +199,7 @@ class WJHttp {
     print("添加翻译列表:$json");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/updateTranslations"),
+            ".1:8080/updateTranslations"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -200,7 +217,7 @@ class WJHttp {
     print("删除翻译");
     final response = await http.post(
         Uri.parse("http://127.0.0"
-            ".188:8080/deleteTranslationByKey"),
+            ".1:8080/deleteTranslationByKey"),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },

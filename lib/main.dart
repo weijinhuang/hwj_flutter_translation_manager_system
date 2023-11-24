@@ -6,8 +6,6 @@ import 'package:hwj_translation_flutter/AddProjectPage.dart';
 import 'package:hwj_translation_flutter/MyCustomScrollBehavior.dart';
 import 'package:hwj_translation_flutter/ProjectDetail.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
-import 'DatableDemoPage.dart';
-import 'DatableDemoPage2.dart';
 import 'net.dart';
 
 void main() {
@@ -79,6 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void fetchProjects() {
     WJHttp().fetchProjects().then((projectsResult) {
       setState(() {
+        projects.clear();
         projects.addAll(projectsResult.data);
       });
     });
@@ -191,8 +190,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _toProjectDetailPage(Project project) async {
     Navigator.of(context).push(MaterialPageRoute(builder: (context) => ProjectDetail(project)));
-    // Navigator.of(context)
-    //     .push(MaterialPageRoute(builder: (context) => DataTableDemoPage2(project)));
   }
 
   void _toAddProjectPage() async {
@@ -203,6 +200,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void deleteProjectRemote(Project project) {
-    WJHttp().deleteModule(module)
+    WJHttp().deleteProject(project).then((value){
+      fetchProjects();
+    });
   }
 }
