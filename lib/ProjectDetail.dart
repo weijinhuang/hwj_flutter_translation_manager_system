@@ -186,13 +186,13 @@ class _ProjectDetail extends State<ProjectDetail> {
 
     return Container(
       // color: Colors.blueGrey,
+
       margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
-      child: ListView(
-        physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        // physics: const NeverScrollableScrollPhysics(),
         // crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            width: 700,
             height: 40,
             child: TextFormField(
               autofocus: true,
@@ -241,30 +241,26 @@ class _ProjectDetail extends State<ProjectDetail> {
         translationList.addAll(t.values);
       }
     }
+
     return Expanded(
-      flex: 1,
-      child: Container(
-        height: 2000,
-        // color: Colors.redAccent,
-        child: ListView(
-          controller: translationListController,
-          scrollDirection: Axis.horizontal,
-          itemExtent: 210 * (languageList.length + 1),
-          children: [
-            ListView.builder(
-              itemBuilder: (context, index) {
-                return buildTranslationListItem(translationList[index]);
-              },
-              itemExtent: 42,
-              itemCount: translationList.length,
-            )
-            // Container(
-            //   height: 200,
-            //     color: Colors.white,
-            //     child: Text("A few resources to get you started if this is your first Flutter project:")),
-            // Text("For help getting started with Flutter development, view the"),
-          ],
-        ),
+      child: ListView(
+        controller: translationListController,
+        scrollDirection: Axis.horizontal,
+        itemExtent: 210 * (languageList.length + 1),
+        children: [
+          ListView.builder(
+            itemBuilder: (context, index) {
+              return buildTranslationListItem(translationList[index]);
+            },
+            itemExtent: 42,
+            itemCount: translationList.length,
+          )
+          // Container(
+          //   height: 200,
+          //     color: Colors.white,
+          //     child: Text("A few resources to get you started if this is your first Flutter project:")),
+          // Text("For help getting started with Flutter development, view the"),
+        ],
       ),
     );
   }
@@ -290,20 +286,15 @@ class _ProjectDetail extends State<ProjectDetail> {
       widgetList.add(gestureDetector);
     }
 
-    return Flexible(
-        child: Container(
-      // color: Colors.amberAccent,
+    return Container(
       height: 60,
-      child: GestureDetector(
         child: ListView(
           itemExtent: 210,
           children: widgetList,
           physics: NeverScrollableScrollPhysics(),
           scrollDirection: Axis.horizontal,
           controller: titleController,
-        ),
-      ),
-    ));
+        ));
   }
 
   Widget buildTranslationListItem(

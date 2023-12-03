@@ -20,7 +20,7 @@ class WJHttp {
           'Accept': '*/*'
         },
         body: jsonEncode(params));
-    print("拉取翻译列表${response.body}");
+    // print("拉取翻译列表${response.body}");
     if (response.statusCode == 200) {
       return CommonListResponse<Translation>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Translation.fromJson(json));
     } else {
