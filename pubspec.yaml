@@ -52,6 +52,7 @@ dev_dependencies:
   json_serializable: ^6.5.4
   file_picker: ^5.3.3
   xml: ^6.3.0
+  excel: ^4.0.0
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

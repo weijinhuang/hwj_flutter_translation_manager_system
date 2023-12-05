@@ -10,6 +10,7 @@ import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:xml/xml.dart';
+import 'package:excel/excel.dart';
 
 class ProjectDetail extends StatefulWidget {
   ProjectDetail(this.project);
@@ -66,6 +67,9 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   void fetchTranslation() {
+
+    translationRootMap.clear();
+
     WJHttp http = WJHttp();
     http.fetchModuleList(project.projectId).then((moduleListWrapper) {
       if (moduleListWrapper.code == 200) {
@@ -90,6 +94,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                         translationKeyLanguageTranslationMap =
                         translationRootMap[element.moduleId];
                     if (translationKeyLanguageTranslationMap == null) {
+                      print("创建translationKeyLanguageTranslationMap：moduleId:${element.moduleId}");
                       translationKeyLanguageTranslationMap = HashMap();
                       translationRootMap[element.moduleId ?? -1] =
                           translationKeyLanguageTranslationMap;
@@ -100,10 +105,14 @@ class _ProjectDetail extends State<ProjectDetail> {
                             element.translationKey];
                     if (null == languageTranslationMap) {
                       languageTranslationMap = HashMap();
+                      print("创建languageTranslationMap：translationKey:${element.translationKey}");
                       translationKeyLanguageTranslationMap[
                           element.translationKey] = languageTranslationMap;
                     }
-                    languageTranslationMap[element.languageId] = element;
+                    int langId = element.languageId;
+                    languageTranslationMap[langId] = element;
+                    print("languageTranslationMap[element.languageId] = element 语言id：$langId");
+
                   }
                 });
               });
@@ -163,15 +172,29 @@ class _ProjectDetail extends State<ProjectDetail> {
     actions.add(TextButton(
       key: importBtnKey,
       onPressed: () {
-        showImportLanguageDialog((value) => selectFile(value));
+        // showImportLanguageDialog((value) => selectFile(value));
+        showImportLanguageDialog(
+            (language) => showSelectPlatformDialog((platform) {
+                  if (platform == "android") {
+                    importAndroid(language);
+                  } else {
+                    importIOS(language);
+                  }
+                }));
       },
       child: const Text("导入"),
     ));
     actions.add(TextButton(
       child: const Text("导出"),
       onPressed: () {
-        showImportLanguageDialog((language) => showSelectPlatformDialog(
-            (platform) => exportTranslation(platform, language)));
+        showImportLanguageDialog(
+            (language) => showSelectPlatformDialog((platform) {
+                  if (platform == "excel") {
+                    exportTranslationExcel();
+                  } else {
+                    exportTranslation(platform, language);
+                  }
+                }));
       },
     ));
     return actions;
@@ -287,7 +310,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
 
     return Container(
-      height: 60,
+        height: 60,
         child: ListView(
           itemExtent: 210,
           children: widgetList,
@@ -591,7 +614,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       );
 
       List<PopupMenuEntry<String>> languageItemArray = [];
-      List<String> platforms = ["android", "ios"];
+      List<String> platforms = ["android", "ios", "excel"];
       for (String platform in platforms) {
         languageItemArray.add(PopupMenuItem<String>(
             value: platform,
@@ -748,16 +771,27 @@ class _ProjectDetail extends State<ProjectDetail> {
     WJHttp().addTranslations(translationList).then((value) {
       if (value.code == 200) {
         print("添加翻译成功");
-        setState(() {});
-        if (value.data != null && value.data.isNotEmpty) {
-          Navigator.of(context).push(MaterialPageRoute(
-              builder: (context) => TranslationComparePage(value.data)));
+        // setState(() {});
+        if (value.data.isNotEmpty) {
+          toComparePage(value.data);
+        } else {
+          setState(() {
+            fetchTranslation();
+          });
         }
       } else {
         print("添加翻译失败，失败列表:${value.data.length}");
       }
       // fetchTranslation();
     });
+  }
+
+  void toComparePage(List<Translation> translationList) async {
+    bool refresh = await Navigator.of(context).push(MaterialPageRoute(
+        builder: (context) => TranslationComparePage(translationList)));
+    if (refresh) {
+      fetchTranslation();
+    }
   }
 
   // void addTranslation(Map<int, Translation> result, int languageId) {
@@ -839,7 +873,31 @@ class _ProjectDetail extends State<ProjectDetail> {
     });
   }
 
-  void selectFile(Language language) async {
+  void importIOS(Language language) async {
+    FilePickerResult? result = await FilePicker.platform
+        .pickFiles(type: FileType.any, allowMultiple: false);
+    if (result != null && result.files.isNotEmpty) {
+      final fileBytes = result.files.first.bytes;
+      if (null != fileBytes) {
+        String content = utf8.decode(fileBytes);
+        var split = content.split("\n");
+        List<Translation> translations = [];
+        for (String line in split) {
+          var kv = line.split("=");
+          if (kv.length == 2) {
+            Translation translation = Translation(
+                kv[0], language.languageId ?? 0, kv[1], project.projectId,
+                moduleId: mCurrentSelectedModule?.moduleId ?? 0,
+                forceAdd: false);
+            translations.add(translation);
+          }
+        }
+        addTranslationRemote(translations);
+      }
+    }
+  }
+
+  void importAndroid(Language language) async {
     FilePickerResult? result = await FilePicker.platform
         .pickFiles(type: FileType.any, allowMultiple: false);
     if (result != null && result.files.isNotEmpty) {
@@ -904,6 +962,69 @@ class _ProjectDetail extends State<ProjectDetail> {
         }
       }
       addTranslationRemote(translations);
+    }
+  }
+
+  void exportTranslationExcel() {
+    print("exportTranslationExcel");
+    Excel excel = Excel.createExcel();
+    String? defaultSheet = excel.getDefaultSheet();
+    List<CellValue> titleRow = List.empty(growable: true);
+    titleRow.add(const TextCellValue("Key"));
+    for (int i = 0; i < languageList.length; i++) {
+      Language language = languageList[i];
+      CellValue cellValue =
+          TextCellValue("${language.languageName}(${language.languageDes})");
+      titleRow.add(cellValue);
+    }
+    excel.appendRow(defaultSheet ?? "Sheet1", titleRow);
+
+    for (Module module in modules) {
+      Map<String, Map<int, Translation>>? translationListInModule =
+          translationRootMap[module.moduleId];
+      if (null != translationListInModule) {
+        var keys = translationListInModule.keys;
+        for (String key in keys) {
+          Map<int, Translation>? translationLanguageContentMap =
+              translationListInModule[key];
+          if (translationLanguageContentMap != null) {
+            List<CellValue> contentRow = List.empty(growable: true);
+            contentRow.add(TextCellValue(key));
+            for (int i = 0; i < languageList.length; i++) {
+              Language language = languageList[i];
+              Translation? translation =
+                  translationLanguageContentMap[language.languageId];
+              if (translation != null) {
+                contentRow.add(TextCellValue(translation.translationContent));
+              }
+            }
+            excel.appendRow(defaultSheet ?? "Sheet1", contentRow);
+          }
+        }
+        // for (Map<int, Translation> translationLanguageContentMap
+        // in translationListInModule.values) {
+        //
+        // }
+      }
+    }
+
+    var encode = excel.encode();
+    if (null != encode) {
+      var base64 = base64Encode(encode);
+      var downloadName = "LongVisionFullTranslation.xlsx";
+
+      final anchor = AnchorElement(
+          href: 'data:application/octet-stream;charset=utf-8;base64,$base64')
+        ..target = 'blank';
+
+      anchor.download = downloadName;
+      var body = document.body;
+      if (null != body) {
+        body.append(anchor);
+      }
+      anchor.click();
+      anchor.remove();
+      print("exportTranslationExcel end");
     }
   }
 
