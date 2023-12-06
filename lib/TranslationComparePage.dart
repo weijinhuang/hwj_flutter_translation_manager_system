@@ -160,6 +160,7 @@ class _TranslationComparePage extends State<TranslationComparePage> {
 
   void saveTranslation() {
     for (var element in translationList) {
+
       String? selectedTranslationContent = element.selectedTranslationContent;
       if (null != selectedTranslationContent) {
         element.translationContent = selectedTranslationContent;

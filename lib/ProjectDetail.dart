@@ -162,28 +162,54 @@ class _ProjectDetail extends State<ProjectDetail> {
       key: importBtnKey,
       onPressed: () {
         // showImportLanguageDialog((value) => selectFile(value));
-        showImportLanguageDialog((language) =>
-            showSelectPlatformDialog((platform) {
-              if (platform == "android") {
+
+        List<String> platforms = ["android", "ios", "excel"];
+        showSelectPlatformDialog(platforms,(platForm) {
+          if (platForm == "excel") {
+          } else {
+            showImportLanguageDialog((language) {
+              if (platForm == "android") {
                 importAndroid(language);
               } else {
                 importIOS(language);
               }
-            }));
+            });
+          }
+        });
+
+        // showImportLanguageDialog((language) =>
+        //     showSelectPlatformDialog((platform) {
+        //       if (platform == "android") {
+        //         importAndroid(language);
+        //       } else {
+        //         importIOS(language);
+        //       }
+        //     }));
       },
       child: const Text("导入"),
     ));
     actions.add(TextButton(
       child: const Text("导出"),
       onPressed: () {
-        showImportLanguageDialog((language) =>
-            showSelectPlatformDialog((platform) {
-              if (platform == "excel") {
-                exportTranslationExcel();
-              } else {
-                exportTranslation(platform, language);
-              }
-            }));
+
+        List<String> platforms = ["android", "ios", "excel"];
+        showSelectPlatformDialog(platforms,(platForm) {
+          if (platForm == "excel") {
+            exportTranslationExcel();
+          } else {
+            showImportLanguageDialog((language) {
+              exportTranslation(platForm, language);
+            });
+          }
+        });
+
+        // showImportLanguageDialog((language) => showSelectPlatformDialog((platform) {
+        //       if (platform == "excel") {
+        //         exportTranslationExcel();
+        //       } else {
+        //         exportTranslation(platform, language);
+        //       }
+        //     }));
       },
     ));
     return actions;
@@ -335,14 +361,14 @@ class _ProjectDetail extends State<ProjectDetail> {
                   return showTranslationEditDialog(translationKey, context, languageTranslationMap);
                 });
             if (null != result && result.isNotEmpty) {
-              for(Translation translation in result){
+              for (Translation translation in result) {
                 if (null != mCurrentSelectedModule) {
                   int? moduleId = mCurrentSelectedModule?.moduleId;
                   if (null != moduleId) {
                     var translationKeyMap = translationRootMap[moduleId];
-                    if(null != translationKeyMap) {
+                    if (null != translationKeyMap) {
                       var translationKeyLanguageMap = translationKeyMap[translation.translationKey];
-                      if(null != translationKeyLanguageMap) {
+                      if (null != translationKeyLanguageMap) {
                         translationKeyLanguageMap[translation.languageId] = translation;
                       }
                     }
@@ -517,10 +543,7 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void showImportLanguageDialog(Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? overlay = Overlay
-        .of(context)
-        .context
-        .findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
@@ -542,12 +565,9 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  void showSelectPlatformDialog(Function action) {
+  void showSelectPlatformDialog(List<String> platforms,Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
-    final RenderBox? overlay = Overlay
-        .of(context)
-        .context
-        .findRenderObject() as RenderBox?;
+    final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
       final RelativeRect position = RelativeRect.fromRect(
         Rect.fromPoints(
@@ -558,7 +578,6 @@ class _ProjectDetail extends State<ProjectDetail> {
       );
 
       List<PopupMenuEntry<String>> languageItemArray = [];
-      List<String> platforms = ["android", "ios", "excel"];
       for (String platform in platforms) {
         languageItemArray.add(PopupMenuItem<String>(value: platform, child: ListTile(leading: const Icon(Icons.visibility), title: Text(platform))));
       }
@@ -823,17 +842,8 @@ class _ProjectDetail extends State<ProjectDetail> {
       String xmlString;
       if (null != fileBytes) {
         xmlString = utf8.decode(fileBytes);
-      } else {
-        xmlString = '''
-        <resources>
-          <string name="Device_charged">设备已通电</string>
-          <string-array name="night_node_array">
-              <item>全彩夜视</item>
-              <item>红外夜视</item>
-              <item>黑白夜视</item>
-          </string-array>
-        </resources>
-        ''';
+      } else{
+        return;
       }
       var xmlDocument = XmlDocument.parse(xmlString);
 
@@ -915,8 +925,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       var base64 = base64Encode(encode);
       var downloadName = "LongVisionFullTranslation.xlsx";
 
-      final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')
-        ..target = 'blank';
+      final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
 
       anchor.download = downloadName;
       var body = document.body;
@@ -929,20 +938,12 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  /// <string-array name="alarm_frequency">
-  ///         <item>No Restrictions</item>
-  ///         <item>1min</item>
-  ///         <item>3min</item>
-  ///         <item>5min</item>
-  /// </string-array>
-  ///
   void exportTranslation(String platform, Language language) {
     StringBuffer sb = StringBuffer();
     if (platform == "android") {
       sb.write('''<?xml version="1.0" encoding="utf-8"?>\n ''');
       sb.write('''<resources>\n''');
     }
-
     for (Module module in modules) {
       Map<String, Map<int, Translation>>? translationListInModule = translationRootMap[module.moduleId];
       if (null != translationListInModule) {
@@ -957,7 +958,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 // trans = "\n\"$key\"=$content";
                 for (int i = 0; i < stringArray.length; i++) {
                   String str = stringArray[i];
-                  trans = '''"${translation.translationKey}"$i=$str\n''';
+                  trans = '''"${translation.translationKey}"$i="$str"\n''';
                   print("trans$trans");
                 }
               } else {
@@ -995,8 +996,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     if (platform == "android") {
       downloadName = "strings.xml";
     }
-    final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')
-      ..target = 'blank';
+    final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')..target = 'blank';
 
     anchor.download = downloadName;
     var body = document.body;
@@ -1007,97 +1007,4 @@ class _ProjectDetail extends State<ProjectDetail> {
     anchor.remove();
   }
 
-// Widget buildTranslationTable() {
-//   return Expanded(
-//     child: SingleChildScrollView(
-//       scrollDirection: Axis.vertical,
-//       child: SingleChildScrollView(
-//         scrollDirection: Axis.horizontal,
-//         child: DataTable(
-//           horizontalMargin: 10,
-//           showBottomBorder: true,
-//           columns: buildTableTitles(),
-//           rows: buildTranslationRows(),
-//           columnSpacing: 50,
-//         ),
-//       ),
-//     ),
-//   );
-// }
-//
-// List<DataColumn> buildTableTitles() {
-//   List<DataColumn> titles = [];
-//   List<String> titleItem = [];
-//   titleItem.add("LanguageKey");
-//   titleItem.addAll(languageNameList);
-//   for (int i = 0; i < titleItem.length; i++) {
-//     var element = titleItem[i];
-//     titles.add(DataColumn(
-//         label: GestureDetector(
-//       onLongPress: () {
-//         if (i == 0) {
-//           return;
-//         }
-//         showDialog(
-//             barrierDismissible: true,
-//             context: context,
-//             builder: (context) {
-//               return showDeleteLanguageDialog(element);
-//             });
-//       },
-//       child: SizedBox(
-//         width: 100,
-//         child: Text(
-//           element,
-//           style: const TextStyle(fontWeight: FontWeight.bold),
-//         ),
-//       ),
-//     )));
-//   }
-//
-//   return titles;
-// }
-
-// List<DataRow> buildTranslationRows() {
-//   List<DataRow> rows = [];
-//   for (var translationKey in translationKeyContentMap.keys) {
-//     rows.add(DataRow(cells: buildCells(translationKey)));
-//   }
-//   return rows;
-// }
-//
-//   List<DataCell> buildCells(String translationKey) {
-//     var translations = translationRootMap[translationKey];
-//     List<DataCell> cells = [];
-//     cells.add(DataCell(Text(translationKey), onDoubleTap: () {
-//       showDialog(
-//           barrierDismissible: true,
-//           context: context,
-//           builder: (context) {
-//             return showDeleteTranslationDialog(translations, translationKey);
-//           });
-//     }));
-//
-//     for (var i = 0; i < languageList.length; i++) {
-//       var languageName = languageList[i];
-//       var translation = translations?[languageName];
-//       cells.add(DataCell(
-//           ConstrainedBox(
-//               constraints: BoxConstraints(maxWidth: 200),
-//               child: Text(
-//                 translation ?? "",
-//                 overflow: TextOverflow.ellipsis,
-//               )), onTap: () async {
-//         var result = await showDialog(
-//             barrierDismissible: true,
-//             context: context,
-//             builder: (context) {
-//               return showTranslationEditDialog(translationKey, context, translations);
-//             });
-//         addTranslation(result);
-//       }));
-//     }
-//
-//     return cells;
-//   }
 }
