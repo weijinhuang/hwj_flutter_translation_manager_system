@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'dart:html';
 
 import 'dart:io' as io;
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:hwj_translation_flutter/EditTranslationDetailPage.dart';
 import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
@@ -37,7 +39,6 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   String _newlanguageName = "";
   String _newLanguageName = "";
-  String translationKeyChange = "";
   ScrollController titleController = ScrollController();
   ScrollController translationListController = ScrollController();
 
@@ -96,12 +97,12 @@ class _ProjectDetail extends State<ProjectDetail> {
                     Map<int, Translation>? languageTranslationMap = translationKeyLanguageTranslationMap[element.translationKey];
                     if (null == languageTranslationMap) {
                       languageTranslationMap = HashMap();
-                      print("创建languageTranslationMap：translationKey:${element.translationKey}");
+                      // print("创建languageTranslationMap：translationKey:${element.translationKey}");
                       translationKeyLanguageTranslationMap[element.translationKey] = languageTranslationMap;
                     }
                     int langId = element.languageId;
                     languageTranslationMap[langId] = element;
-                    print("languageTranslationMap[element.languageId] = element 语言id：$langId");
+                    // print("languageTranslationMap[element.languageId] = element 语言id：$langId");
                   }
                 });
               });
@@ -125,7 +126,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 builder: (context) {
                   return showTranslationEditDialog(null, context, null);
                 });
-            addTranslationRemote(result.toList(), true);
+            handleTranslationEdit(result);
           },
           child: const Icon(Icons.add),
         ),
@@ -164,7 +165,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         // showImportLanguageDialog((value) => selectFile(value));
 
         List<String> platforms = ["android", "ios", "excel"];
-        showSelectPlatformDialog(platforms,(platForm) {
+        showSelectPlatformDialog(platforms, (platForm) {
           if (platForm == "excel") {
           } else {
             showImportLanguageDialog((language) {
@@ -176,40 +177,26 @@ class _ProjectDetail extends State<ProjectDetail> {
             });
           }
         });
-
-        // showImportLanguageDialog((language) =>
-        //     showSelectPlatformDialog((platform) {
-        //       if (platform == "android") {
-        //         importAndroid(language);
-        //       } else {
-        //         importIOS(language);
-        //       }
-        //     }));
       },
       child: const Text("导入"),
     ));
     actions.add(TextButton(
       child: const Text("导出"),
       onPressed: () {
-
         List<String> platforms = ["android", "ios", "excel"];
-        showSelectPlatformDialog(platforms,(platForm) {
+        showSelectPlatformDialog(platforms, (platForm) {
           if (platForm == "excel") {
             exportTranslationExcel();
           } else {
             showImportLanguageDialog((language) {
-              exportTranslation(platForm, language);
+              if (platForm == "android") {
+                exportTranslationAndroid(language);
+              } else {
+                exportTranslationIOS(language);
+              }
             });
           }
         });
-
-        // showImportLanguageDialog((language) => showSelectPlatformDialog((platform) {
-        //       if (platform == "excel") {
-        //         exportTranslationExcel();
-        //       } else {
-        //         exportTranslation(platform, language);
-        //       }
-        //     }));
       },
     ));
     return actions;
@@ -218,10 +205,6 @@ class _ProjectDetail extends State<ProjectDetail> {
   GlobalKey importBtnKey = GlobalKey();
 
   Widget buildBody() {
-    // if (translationMap.isEmpty) {
-    //   return const Center(child: CircularProgressIndicator());
-    // }
-
     return Container(
       // color: Colors.blueGrey,
 
@@ -247,15 +230,6 @@ class _ProjectDetail extends State<ProjectDetail> {
           // buildTranslationTable(),
           buildLanguageListTitle(),
           buildTranslationList(mCurrentSelectedModule),
-          // Expanded(
-          //   child: Container(
-          //     color: Colors.amber,
-          //     child: ListView(
-          //       scrollDirection: Axis.horizontal,
-          //       children: [Text("test")],
-          //     ),
-          //   ),
-          // )
         ],
       ),
     );
@@ -290,11 +264,6 @@ class _ProjectDetail extends State<ProjectDetail> {
             itemExtent: 42,
             itemCount: translationList.length,
           )
-          // Container(
-          //   height: 200,
-          //     color: Colors.white,
-          //     child: Text("A few resources to get you started if this is your first Flutter project:")),
-          // Text("For help getting started with Flutter development, view the"),
         ],
       ),
     );
@@ -354,29 +323,30 @@ class _ProjectDetail extends State<ProjectDetail> {
         widgetList.add(GestureDetector(
           child: contentItem,
           onTap: () async {
-            Set<Translation> result = await showDialog(
+            var result = await showDialog(
                 barrierDismissible: true,
                 context: context,
                 builder: (context) {
                   return showTranslationEditDialog(translationKey, context, languageTranslationMap);
                 });
-            if (null != result && result.isNotEmpty) {
-              for (Translation translation in result) {
-                if (null != mCurrentSelectedModule) {
-                  int? moduleId = mCurrentSelectedModule?.moduleId;
-                  if (null != moduleId) {
-                    var translationKeyMap = translationRootMap[moduleId];
-                    if (null != translationKeyMap) {
-                      var translationKeyLanguageMap = translationKeyMap[translation.translationKey];
-                      if (null != translationKeyLanguageMap) {
-                        translationKeyLanguageMap[translation.languageId] = translation;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            addTranslationRemote(result.toList(), false);
+            handleTranslationEdit(result);
+            // if (null != result && result.isNotEmpty) {
+            //   for (Translation translation in result) {
+            //     if (null != mCurrentSelectedModule) {
+            //       int? moduleId = mCurrentSelectedModule?.moduleId;
+            //       if (null != moduleId) {
+            //         var translationKeyMap = translationRootMap[moduleId];
+            //         if (null != translationKeyMap) {
+            //           var translationKeyLanguageMap = translationKeyMap[translation.translationKey];
+            //           if (null != translationKeyLanguageMap) {
+            //             translationKeyLanguageMap[translation.languageId] = translation;
+            //           }
+            //         }
+            //       }
+            //     }
+            //   }
+            // }
+            // addTranslationRemote(result, false);
           },
         ));
       }
@@ -428,114 +398,78 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  AlertDialog showTranslationEditDialog(String? translationKey, BuildContext context, Map<int, Translation>? translationIdContentMap) {
-    Set<Translation> translationChangedList = {};
-    // translationChangedList[LANGUAGE_KEY] = translationKey ?? "";
+  Widget showTranslationEditDialog(String? translationKey, BuildContext context, Map<int, Translation>? translationIdContentMap) {
     String? titleText;
-    translationKeyChange = translationKey ?? "";
     if (translationKey == null) {
       titleText = "添加语言";
     } else {
       titleText = "编辑语言";
     }
     print(titleText);
-    // var keys = translationIdContentMap.keys.toList();
-
-    List<Widget> widgetList = [];
-    Widget keyItem = Container(
-      width: 500,
-      height: 80,
-      margin: EdgeInsets.only(top: 10),
-      child: TextFormField(
-        autofocus: true,
-        initialValue: translationKey,
-        textInputAction: TextInputAction.next,
-        decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入Key", labelText: "LanguageKey"),
-        onChanged: (value) {
-          print("onChange:translationKeyChange:$value");
-          translationKeyChange = value;
-        },
-      ),
-    );
-    widgetList.add(keyItem);
-    for (int i = 0; i < languageList.length; i++) {
-      Language language = languageList[i];
-      var translation = translationIdContentMap?[language.languageId];
-      Widget translationItem = SizedBox(
-        width: 500,
-        height: 80,
-        child: TextFormField(
-          autofocus: true,
-          maxLines: null,
-          initialValue: translation?.translationContent ?? " ",
-          textInputAction: TextInputAction.next,
-          decoration: InputDecoration(border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入内容", labelText: "${language.languageName}(${language.languageDes})"),
-          onChanged: (value) {
-            if (null != translation) {
-              print("onChange:translation.translationContent:$value");
-              translation.translationContent = value;
-              translation.forceAdd = true;
-              translationChangedList.add(translation);
-            } else {
-              Translation newTranslation = Translation(translationKeyChange, language.languageId ?? -1, value, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: true);
-              translationChangedList.add(newTranslation);
-            }
-          },
-        ),
-      );
-      widgetList.add(translationItem);
-    }
 
     return AlertDialog(
       elevation: 10,
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(titleText),
       content: SizedBox(
         width: 1000,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ListView(
-                shrinkWrap: true,
-                children: widgetList,
-              ),
-            ),
-          ],
-        ),
+        child: EditTranslationDetailPage(project.projectId, mCurrentSelectedModule?.moduleId ?? 0, translationKey, translationIdContentMap, languageList),
       ),
-      actions: [
-        SizedBox(
-            width: 200,
-            height: 30,
-            child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text("取消"))),
-        SizedBox(
-            width: 200,
-            height: 30,
-            child: TextButton(
-              onPressed: () {
-                // translationIdContentMap[languageName] = translationTemp ?? "";
-
-                if (translationKeyChange.isNotEmpty) {
-                  print("key:$translationKeyChange");
-                  setState(() {});
-                  Navigator.of(context).pop(translationChangedList);
-                } else {
-                  print("key为空");
-                  Navigator.of(context).pop(null);
-                }
-              },
-              child: const Text(
-                "确定",
-                style: TextStyle(color: Colors.blueAccent),
-              ),
-            )),
-      ],
     );
+  }
+
+  void handleTranslationEdit(Map<String, Map<int, String?>?>? translationContentMap) {
+    if (null != translationContentMap) {
+      String translationKey = translationContentMap.keys.first;
+      Map<int, String?>? languageContentMapChange = translationContentMap.values.first;
+      if (languageContentMapChange != null) {
+        if (null != mCurrentSelectedModule) {
+          int? moduleId = mCurrentSelectedModule?.moduleId;
+
+          if (null != moduleId) {
+            var translationKeyMap = translationRootMap[moduleId];
+            if (null != translationKeyMap) {
+              var localTranslationKeyLanguageMap = translationKeyMap[translationKey];
+              if (null != localTranslationKeyLanguageMap) {
+                List<Translation> translationList = [];
+                for (Language language in languageList) {
+                  String? changeContent = languageContentMapChange[language.languageId];
+                  Translation? translation = localTranslationKeyLanguageMap[language.languageId];
+                  if (null != changeContent) {
+                    if (null != translation) {
+                      translation.translationContent = changeContent;
+                      translation.forceAdd = true;
+                    } else {
+                      translation = Translation(translationKey, language.languageId ?? 0, changeContent, project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                      localTranslationKeyLanguageMap[language.languageId??0] = translation;
+                    }
+                    translationList.add(translation);
+                  }
+                  addTranslationRemote(translationList, false);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    // if (null != result && result.isNotEmpty) {
+    //   for (Translation translation in result) {
+    //     if (null != mCurrentSelectedModule) {
+    //       int? moduleId = mCurrentSelectedModule?.moduleId;
+    //       if (null != moduleId) {
+    //         var translationKeyMap = translationRootMap[moduleId];
+    //         if (null != translationKeyMap) {
+    //           var localTranslationKeyLanguageMap = translationKeyMap[translation.translationKey];
+    //           if (null != localTranslationKeyLanguageMap) {
+    //             localTranslationKeyLanguageMap[translation.languageId] = translation;
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
   }
 
   Language? importLanguageName = null;
@@ -565,7 +499,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  void showSelectPlatformDialog(List<String> platforms,Function action) {
+  void showSelectPlatformDialog(List<String> platforms, Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
     final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
@@ -842,7 +776,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       String xmlString;
       if (null != fileBytes) {
         xmlString = utf8.decode(fileBytes);
-      } else{
+      } else {
         return;
       }
       var xmlDocument = XmlDocument.parse(xmlString);
@@ -938,65 +872,45 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  void exportTranslation(String platform, Language language) {
-    StringBuffer sb = StringBuffer();
-    if (platform == "android") {
-      sb.write('''<?xml version="1.0" encoding="utf-8"?>\n ''');
-      sb.write('''<resources>\n''');
-    }
-    for (Module module in modules) {
-      Map<String, Map<int, Translation>>? translationListInModule = translationRootMap[module.moduleId];
-      if (null != translationListInModule) {
-        for (Map<int, Translation> translationLanguageContentMap in translationListInModule.values) {
-          Translation? translation = translationLanguageContentMap[language.languageId];
-          if (translation != null) {
-            String trans;
-            if (translation.translationContent.contains("|")) {
-              //数组
-              var stringArray = translation.translationContent.split("|");
-              if (platform == "ios") {
-                // trans = "\n\"$key\"=$content";
-                for (int i = 0; i < stringArray.length; i++) {
-                  String str = stringArray[i];
-                  trans = '''"${translation.translationKey}"$i="$str"\n''';
-                  print("trans$trans");
-                }
+  void exportTranslationAndroid(Language language) {
+    final builder = XmlBuilder(optimizeNamespaces: true);
+    builder.processing('xml', 'version="1.0" encoding="utf-8"');
+    builder.element('resources', nest: () {
+      for (Module module in modules) {
+        Map<String, Map<int, Translation>>? translationListInModule = translationRootMap[module.moduleId];
+        if (null != translationListInModule) {
+          for (Map<int, Translation> translationLanguageContentMap in translationListInModule.values) {
+            Translation? translation = translationLanguageContentMap[language.languageId];
+            if (translation != null) {
+              if (translation.translationContent.contains("|")) {
+                //数组
+                var stringArray = translation.translationContent.split("|");
+                builder.element("string-array", nest: () {
+                  builder.attribute("name", translation.translationKey);
+                  print(translation.translationKey);
+                  for (int i = 0; i < stringArray.length; i++) {
+                    String str = stringArray[i];
+                    builder.element("item", nest: str);
+                    print("$str");
+                  }
+                });
               } else {
-                //<string name="Device_charged">设备已通电</string>
-                sb.write('''  <string-array name="${translation.translationKey}">\n''');
-                for (int i = 0; i < stringArray.length; i++) {
-                  String str = stringArray[i];
-                  trans = '''   <item>$str</item>\n''';
-                  sb.write(trans);
-                }
-                sb.write('''  </string-array>''');
+                builder.element("string", nest: () {
+                  builder.attribute("name", translation.translationKey);
+                  builder.text(translation.translationContent);
+                });
               }
-            } else {
-              if (platform == "ios") {
-                // trans = "\n\"$key\"=$content";
-                trans = ''' "${translation.translationKey}"=${translation.translationContent}\n''';
-              } else {
-                //<string name="Device_charged">设备已通电</string>
-                trans = ''' <string name="${translation.translationKey}">${translation.translationContent}</string>\n''';
-              }
-              print("trans$trans");
-              sb.write(trans);
             }
           }
         }
       }
-    }
+    });
+    final xmlDocument = builder.buildDocument();
 
-    if (platform == "android") {
-      sb.write('''\n</resources> ''');
-    }
+    var string = xmlDocument.toXmlString();
+    var downloadName = "strings.xml";
 
-    var string = sb.toString();
-    var downloadName = "Localizable.strings";
-    if (platform == "android") {
-      downloadName = "strings.xml";
-    }
-    final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')..target = 'blank';
+    final anchor = AnchorElement(href: '''data:application/octet-stream;utf-8,$string''')..target = 'blank';
 
     anchor.download = downloadName;
     var body = document.body;
@@ -1007,4 +921,43 @@ class _ProjectDetail extends State<ProjectDetail> {
     anchor.remove();
   }
 
+  void exportTranslationIOS(Language language) {
+    StringBuffer sb = StringBuffer();
+    for (Module module in modules) {
+      Map<String, Map<int, Translation>>? translationListInModule = translationRootMap[module.moduleId];
+      if (null != translationListInModule) {
+        for (Map<int, Translation> translationLanguageContentMap in translationListInModule.values) {
+          Translation? translation = translationLanguageContentMap[language.languageId];
+          if (translation != null) {
+            String trans;
+            if (translation.translationContent.contains("|")) {
+              //数组
+              var stringArray = translation.translationContent.split("|");
+              for (int i = 0; i < stringArray.length; i++) {
+                String str = stringArray[i];
+                trans = '''"${translation.translationKey}"$i="$str"\n''';
+                print("trans$trans");
+              }
+            } else {
+              // trans = "\n\"$key\"=$content";
+              trans = ''' "${translation.translationKey}"="${translation.translationContent}";\n''';
+              print("trans$trans");
+              sb.write(trans);
+            }
+          }
+        }
+      }
+    }
+    var string = sb.toString();
+    var downloadName = "Localizable.strings";
+    final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')..target = 'blank';
+
+    anchor.download = downloadName;
+    var body = document.body;
+    if (null != body) {
+      body.append(anchor);
+    }
+    anchor.click();
+    anchor.remove();
+  }
 }

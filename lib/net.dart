@@ -10,7 +10,7 @@ part 'net.g.dart';
 class CommonResponse<DATA> {
   int code;
   String msg;
-  DATA data;
+  DATA? data;
 
   CommonResponse(this.code, this.msg, this.data);
 
@@ -56,12 +56,20 @@ class Translation {
 
   Translation(this.translationKey, this.languageId, this.translationContent,
       this.projectId,
-      {this.translationId, this.moduleId,this.forceAdd,this.oldTranslationContent});
+      {this.translationId,
+      this.moduleId,
+      this.forceAdd,
+      this.oldTranslationContent});
 
   factory Translation.fromJson(Map<String, dynamic> json) =>
       _$TranslationFromJson(json);
 
   Map<String, dynamic> toJson() => _$TranslationToJson(this);
+
+  @override
+  String toString() {
+    return 'Translation{translationId: $translationId, translationKey: $translationKey, languageId: $languageId, translationContent: $translationContent, projectId: $projectId, moduleId: $moduleId, forceAdd: $forceAdd, oldTranslationContent: $oldTranslationContent, selectedTranslationContent: $selectedTranslationContent}';
+  }
 }
 
 @JsonSerializable()
@@ -108,7 +116,59 @@ class Module {
 
   Module(this.moduleName, this.projectId, {this.moduleId});
 
-  factory Module.fromJson(Map<String,dynamic> json) => _$ModuleFromJson(json);
+  factory Module.fromJson(Map<String, dynamic> json) => _$ModuleFromJson(json);
 
-  Map<String ,dynamic> toJson() => _$ModuleToJson(this);
+  Map<String, dynamic> toJson() => _$ModuleToJson(this);
 }
+
+@JsonSerializable()
+class BaiduTranslationParam {
+  String q;
+  String from;
+  String to;
+  String appid = "20231209001905732";
+  String salt;
+  String sign;
+
+  BaiduTranslationParam(
+      this.q, this.from, this.to, this.appid, this.salt, this.sign);
+
+
+  factory BaiduTranslationParam.fromJson(Map<String, dynamic> json) => _$BaiduTranslationParamFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BaiduTranslationParamToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true)
+class BaiduTranslationResult {
+  String? from;
+  String? to;
+  List<BaiduTranslation?> trans_result;
+  String? error_code;
+
+  BaiduTranslationResult(
+      this.from, this.to, this.trans_result, this.error_code);
+  factory BaiduTranslationResult.fromJson(Map<String, dynamic> json) => _$BaiduTranslationResultFromJson(json);
+  // factory  BaiduTranslationResult.fromJson2(Map<String, dynamic> json){
+  //   if(json == null){
+  //     return null;
+  //   }
+  //   return  _$BaiduTranslationResultFromJson(json);
+  // }
+
+  Map<String, dynamic> toJson() => _$BaiduTranslationResultToJson(this);
+}
+
+@JsonSerializable()
+class BaiduTranslation{
+  String? src;
+
+  String? dst;
+
+
+  BaiduTranslation();
+  factory BaiduTranslation.fromJson(Map<String, dynamic> json) => _$BaiduTranslationFromJson(json);
+
+  Map<String, dynamic> toJson() => _$BaiduTranslationToJson(this);
+}
+

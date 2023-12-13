@@ -13,7 +13,7 @@ CommonResponse<DATA> _$CommonResponseFromJson<DATA>(
     CommonResponse<DATA>(
       json['code'] as int,
       json['msg'] as String,
-      fromJsonDATA(json['data']),
+      _$nullableGenericFromJson(json['data'], fromJsonDATA),
     );
 
 Map<String, dynamic> _$CommonResponseToJson<DATA>(
@@ -23,8 +23,20 @@ Map<String, dynamic> _$CommonResponseToJson<DATA>(
     <String, dynamic>{
       'code': instance.code,
       'msg': instance.msg,
-      'data': toJsonDATA(instance.data),
+      'data': _$nullableGenericToJson(instance.data, toJsonDATA),
     };
+
+T? _$nullableGenericFromJson<T>(
+  Object? input,
+  T Function(Object? json) fromJson,
+) =>
+    input == null ? null : fromJson(input);
+
+Object? _$nullableGenericToJson<T>(
+  T? input,
+  Object? Function(T value) toJson,
+) =>
+    input == null ? null : toJson(input);
 
 CommonListResponse<DATA> _$CommonListResponseFromJson<DATA>(
   Map<String, dynamic> json,
@@ -55,7 +67,8 @@ Translation _$TranslationFromJson(Map<String, dynamic> json) => Translation(
       moduleId: json['moduleId'] as int?,
       forceAdd: json['forceAdd'] as bool?,
       oldTranslationContent: json['oldTranslationContent'] as String?,
-    );
+    )..selectedTranslationContent =
+        json['selectedTranslationContent'] as String?;
 
 Map<String, dynamic> _$TranslationToJson(Translation instance) =>
     <String, dynamic>{
@@ -67,6 +80,7 @@ Map<String, dynamic> _$TranslationToJson(Translation instance) =>
       'moduleId': instance.moduleId,
       'forceAdd': instance.forceAdd,
       'oldTranslationContent': instance.oldTranslationContent,
+      'selectedTranslationContent': instance.selectedTranslationContent,
     };
 
 Project _$ProjectFromJson(Map<String, dynamic> json) => Project(
@@ -103,4 +117,59 @@ Map<String, dynamic> _$ModuleToJson(Module instance) => <String, dynamic>{
       'moduleId': instance.moduleId,
       'moduleName': instance.moduleName,
       'projectId': instance.projectId,
+    };
+
+BaiduTranslationParam _$BaiduTranslationParamFromJson(
+        Map<String, dynamic> json) =>
+    BaiduTranslationParam(
+      json['q'] as String,
+      json['from'] as String,
+      json['to'] as String,
+      json['appid'] as String,
+      json['salt'] as String,
+      json['sign'] as String,
+    );
+
+Map<String, dynamic> _$BaiduTranslationParamToJson(
+        BaiduTranslationParam instance) =>
+    <String, dynamic>{
+      'q': instance.q,
+      'from': instance.from,
+      'to': instance.to,
+      'appid': instance.appid,
+      'salt': instance.salt,
+      'sign': instance.sign,
+    };
+
+BaiduTranslationResult _$BaiduTranslationResultFromJson(
+        Map<String, dynamic> json) =>
+    BaiduTranslationResult(
+      json['from'] as String?,
+      json['to'] as String?,
+      (json['trans_result'] as List<dynamic>)
+          .map((e) => e == null
+              ? null
+              : BaiduTranslation.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      json['error_code'] as String?,
+    );
+
+Map<String, dynamic> _$BaiduTranslationResultToJson(
+        BaiduTranslationResult instance) =>
+    <String, dynamic>{
+      'from': instance.from,
+      'to': instance.to,
+      'trans_result': instance.trans_result.map((e) => e?.toJson()).toList(),
+      'error_code': instance.error_code,
+    };
+
+BaiduTranslation _$BaiduTranslationFromJson(Map<String, dynamic> json) =>
+    BaiduTranslation()
+      ..src = json['src'] as String?
+      ..dst = json['dst'] as String?;
+
+Map<String, dynamic> _$BaiduTranslationToJson(BaiduTranslation instance) =>
+    <String, dynamic>{
+      'src': instance.src,
+      'dst': instance.dst,
     };

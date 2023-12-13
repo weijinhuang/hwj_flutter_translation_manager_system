@@ -53,6 +53,7 @@ dev_dependencies:
   file_picker: ^5.3.3
   xml: ^6.3.0
   excel: ^4.0.0
+  crypto: ^3.0.3
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
