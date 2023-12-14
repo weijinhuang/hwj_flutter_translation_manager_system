@@ -11,6 +11,12 @@ class WJHttp {
 
   String ip = "172.16.26.46";
 
+  Future<http.Response> exportTranslationZip(String projectId, String platform) async {
+    final response = await http.get(Uri.parse("http://$ip:80/exportTranslation/$projectId/$platform"),
+        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/octet-stream', 'Accept': '*/*'});
+    return response;
+  }
+
   Future<CommonResponse<BaiduTranslationResult?>> translateByBaidu(String sourceContent, String from, String to) async {
     var salt = Random().nextInt(100000).toString();
     var str = "20231209001905732$sourceContent$salt$baiduScreat";
@@ -45,7 +51,7 @@ class WJHttp {
     }
     final response = await http.post(Uri.parse("http://$ip:80/getAllTranslation"),
         headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(params));
-    print("拉取翻译列表${response.body}");
+    // print("拉取翻译列表${response.body}");
     if (response.statusCode == 200) {
       return CommonListResponse<Translation>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Translation.fromJson(json));
     } else {

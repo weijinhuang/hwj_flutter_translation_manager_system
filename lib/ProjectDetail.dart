@@ -80,6 +80,13 @@ class _ProjectDetail extends State<ProjectDetail> {
           http.fetchLanguageList(project.projectId).then((languageListWrapper) {
             if (languageListWrapper.code == 200) {
               languageList = languageListWrapper.data;
+              languageList.sort((a, b) {
+                if (a.languageName == "en" || a.languageName == "zh") {
+                  return 0;
+                } else {
+                  return 1;
+                }
+              });
               for (Language element in languageList) {
                 print("语言：${element.languageName}");
               }
@@ -187,10 +194,11 @@ class _ProjectDetail extends State<ProjectDetail> {
         showSelectPlatformDialog(platforms, (platForm) {
           if (platForm == "excel") {
             exportTranslationExcel();
+          } else if (platForm == "android") {
+            exportTranslationAndroid();
           } else {
             showImportLanguageDialog((language) {
               if (platForm == "android") {
-                exportTranslationAndroid(language);
               } else {
                 exportTranslationIOS(language);
               }
@@ -426,30 +434,42 @@ class _ProjectDetail extends State<ProjectDetail> {
       if (languageContentMapChange != null) {
         if (null != mCurrentSelectedModule) {
           int? moduleId = mCurrentSelectedModule?.moduleId;
-
           if (null != moduleId) {
-            var translationKeyMap = translationRootMap[moduleId];
-            if (null != translationKeyMap) {
-              var localTranslationKeyLanguageMap = translationKeyMap[translationKey];
-              if (null != localTranslationKeyLanguageMap) {
-                List<Translation> translationList = [];
-                for (Language language in languageList) {
-                  String? changeContent = languageContentMapChange[language.languageId];
-                  Translation? translation = localTranslationKeyLanguageMap[language.languageId];
-                  if (null != changeContent) {
-                    if (null != translation) {
-                      translation.translationContent = changeContent;
-                      translation.forceAdd = true;
-                    } else {
-                      translation = Translation(translationKey, language.languageId ?? 0, changeContent, project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
-                      localTranslationKeyLanguageMap[language.languageId??0] = translation;
-                    }
-                    translationList.add(translation);
+            Map<int, Translation>? localTranslationKeyLanguageMap;
+             List<Translation> translationList = [];
+             localTranslationKeyLanguageMap = translationRootMap[moduleId]?[translationKey];
+            if (null != localTranslationKeyLanguageMap) {
+              for (Language language in languageList) {
+                String? changeContent = languageContentMapChange[language.languageId];
+                Translation? translation = localTranslationKeyLanguageMap[language.languageId];
+                if (null != changeContent) {
+                  if (null != translation) {
+                    translation.translationContent = changeContent;
+                    translation.forceAdd = true;
+                  } else {
+                    translation = Translation(translationKey, language.languageId ?? 0, changeContent, project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                    localTranslationKeyLanguageMap[language.languageId ?? 0] = translation;
                   }
-                  addTranslationRemote(translationList, false);
+                  translationList.add(translation);
                 }
               }
+            } else {
+              languageContentMapChange.keys.forEach((languageId) {
+                Translation newTranslation =
+                Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                translationList.add(newTranslation);
+              });
             }
+            addTranslationRemote(translationList, true);
+
+
+            // else{
+            //   languageContentMapChange.keys.forEach((languageId) {
+            //     Translation newTranslation =
+            //     Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+            //     translationList.add(newTranslation);
+            //   });
+            // }
           }
         }
       }
@@ -796,12 +816,15 @@ class _ProjectDetail extends State<ProjectDetail> {
 
               Translation translation = Translation(languageKey, language.languageId ?? 0, translationContent, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
               translations.add(translation);
-            } else if (childElementName == "string-array") {
+            } else if (childElementName == "string-array" || childElementName == "integer-array") {
               String languageKey = childElement.attributes.first.value;
               StringBuffer translationContentBuilder = StringBuffer();
-              for (var thirdChildElement in childElement.childElements) {
+              for (int i = 0, j = childElement.childElements.length; i < j; i++) {
+                var thirdChildElement = childElement.childElements.elementAt(i);
                 translationContentBuilder.write(thirdChildElement.innerText);
-                translationContentBuilder.write("|");
+                if (i != j - 1) {
+                  translationContentBuilder.write("|");
+                }
               }
 
               String translationContent = translationContentBuilder.toString();
@@ -872,7 +895,41 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  void exportTranslationAndroid(Language language) {
+  void exportTranslationAndroid() {
+    WJHttp().exportTranslationZip(project.projectId, "android").then((value) {
+      var base64 = base64Encode(value.bodyBytes);
+      var downloadName = "LongVisionFullTranslation.zip";
+
+      final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
+
+      anchor.download = downloadName;
+      var body = document.body;
+      if (null != body) {
+        body.append(anchor);
+      }
+      anchor.click();
+      anchor.remove();
+      print("exportTranslationExcel end");
+    });
+    return;
+
+    // var xmlDocument = exportTranslationXML();
+    //
+    // var string = xmlDocument.toXmlString();
+    // var downloadName = "strings.xml";
+    //
+    // final anchor = AnchorElement(href: '''data:application/octet-stream;utf-8,$string''')..target = 'blank';
+    //
+    // anchor.download = downloadName;
+    // var body = document.body;
+    // if (null != body) {
+    //   body.append(anchor);
+    // }
+    // anchor.click();
+    // anchor.remove();
+  }
+
+  XmlDocument exportTranslationXML(Language language) {
     final builder = XmlBuilder(optimizeNamespaces: true);
     builder.processing('xml', 'version="1.0" encoding="utf-8"');
     builder.element('resources', nest: () {
@@ -906,19 +963,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       }
     });
     final xmlDocument = builder.buildDocument();
-
-    var string = xmlDocument.toXmlString();
-    var downloadName = "strings.xml";
-
-    final anchor = AnchorElement(href: '''data:application/octet-stream;utf-8,$string''')..target = 'blank';
-
-    anchor.download = downloadName;
-    var body = document.body;
-    if (null != body) {
-      body.append(anchor);
-    }
-    anchor.click();
-    anchor.remove();
+    return xmlDocument;
   }
 
   void exportTranslationIOS(Language language) {

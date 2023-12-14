@@ -34,7 +34,8 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
   @override
   void initState() {
     super.initState();
-    _repeatController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+    _repeatController = AnimationController(vsync: this, duration: const Duration(seconds: 2))
+      ..repeat();
     _animation = Tween<double>(begin: 0, end: 1).animate(_repeatController);
 
     if (null != widget.languageIdContentMapParam) {
@@ -49,28 +50,36 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
         break;
       }
     }
+
+    translationKeyChange = widget.translationKey ?? "";
   }
 
   @override
   Widget build(BuildContext context) {
     // print("_EditTranslationDetailPage build:");
     List<Widget> widgetList = [];
-    translationKeyChange = widget.translationKey ?? "";
+    Widget keyText;
+    if(translationKeyChange == ""){
+      keyText = TextFormField(
+        autofocus: true,
+        textInputAction: TextInputAction.next,
+        decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入Key", labelText: "LanguageKey"),
+        onChanged: (value) {
+          translationKeyChange = value;
+          print("onChange:translationKeyChange:$value");
+        },
+      );
+    }else{
+      keyText = Text(translationKeyChange);
+    }
+
     Widget keyItem = Container(
       width: 500,
       height: 80,
       child: Row(
         children: [
           Expanded(
-            child: TextFormField(
-              autofocus: true,
-              initialValue: widget.translationKey,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入Key", labelText: "LanguageKey"),
-              onChanged: (value) {
-                print("onChange:translationKeyChange:$value");
-              },
-            ),
+            child: keyText,
           ),
           IconButton(
               onPressed: () {
