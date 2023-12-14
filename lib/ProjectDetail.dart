@@ -194,15 +194,23 @@ class _ProjectDetail extends State<ProjectDetail> {
         showSelectPlatformDialog(platforms, (platForm) {
           if (platForm == "excel") {
             exportTranslationExcel();
-          } else if (platForm == "android") {
-            exportTranslationAndroid();
           } else {
-            showImportLanguageDialog((language) {
-              if (platForm == "android") {
-              } else {
-                exportTranslationIOS(language);
+            WJHttp().exportTranslationZip(project.projectId, platForm).then((value) {
+              var base64 = base64Encode(value.bodyBytes);
+              var downloadName = "LongVisionFullTranslation.zip";
+
+              final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
+
+              anchor.download = downloadName;
+              var body = document.body;
+              if (null != body) {
+                body.append(anchor);
               }
+              anchor.click();
+              anchor.remove();
+              print("export $platForm end");
             });
+            return;
           }
         });
       },
@@ -436,8 +444,8 @@ class _ProjectDetail extends State<ProjectDetail> {
           int? moduleId = mCurrentSelectedModule?.moduleId;
           if (null != moduleId) {
             Map<int, Translation>? localTranslationKeyLanguageMap;
-             List<Translation> translationList = [];
-             localTranslationKeyLanguageMap = translationRootMap[moduleId]?[translationKey];
+            List<Translation> translationList = [];
+            localTranslationKeyLanguageMap = translationRootMap[moduleId]?[translationKey];
             if (null != localTranslationKeyLanguageMap) {
               for (Language language in languageList) {
                 String? changeContent = languageContentMapChange[language.languageId];
@@ -456,12 +464,11 @@ class _ProjectDetail extends State<ProjectDetail> {
             } else {
               languageContentMapChange.keys.forEach((languageId) {
                 Translation newTranslation =
-                Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                    Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
                 translationList.add(newTranslation);
               });
             }
             addTranslationRemote(translationList, true);
-
 
             // else{
             //   languageContentMapChange.keys.forEach((languageId) {
