@@ -142,7 +142,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           backgroundColor: Colors.white,
           iconTheme: const IconThemeData(color: Colors.black),
           title: Text(
-            project.projectName,
+            project.projectName??"",
             style: const TextStyle(color: Colors.black),
           ),
           actions: buildActions(),

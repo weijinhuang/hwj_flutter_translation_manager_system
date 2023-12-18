@@ -108,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     width: 100,
                     alignment: Alignment.center,
                     margin: const EdgeInsets.only(left: 100, right: 100, top: 50, bottom: 50),
-                    child: Text(project.projectName),
+                    child: Text(project.projectId),
                   ),
                 ),
               ),
@@ -182,7 +182,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _toAddProjectPage() async {
-    Project project = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProjectPage()));
+    Project? project = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProjectPage()));
     if (null != project) {
       fetchProjects();
     }

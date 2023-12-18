@@ -84,7 +84,7 @@ Map<String, dynamic> _$TranslationToJson(Translation instance) =>
     };
 
 Project _$ProjectFromJson(Map<String, dynamic> json) => Project(
-      json['projectName'] as String,
+      json['projectName'] as String?,
       json['projectId'] as String,
     );
 

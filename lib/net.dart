@@ -74,7 +74,7 @@ class Translation {
 
 @JsonSerializable()
 class Project {
-  String projectName;
+  String? projectName;
   String projectId;
 
   Project(this.projectName, this.projectId);
