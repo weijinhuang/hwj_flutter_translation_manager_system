@@ -124,14 +124,23 @@ class _ProjectDetail extends State<ProjectDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
         floatingActionButton: FloatingActionButton(
-          tooltip: "添加语言",
+          tooltip: "添加翻译",
           elevation: 30,
           onPressed: () async {
             var result = await showDialog(
                 barrierDismissible: true,
                 context: context,
                 builder: (context) {
-                  return showTranslationEditDialog(null, context, null);
+                  if(languageList.isNotEmpty) {
+                    return showTranslationEditDialog(null, context, null);
+                  }else{
+                    return AlertDialog(
+                      elevation: 10,
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      title: const Text("请先添加语言"),
+                    );
+                  }
                 });
             handleTranslationEdit(result);
           },
@@ -142,7 +151,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           backgroundColor: Colors.white,
           iconTheme: const IconThemeData(color: Colors.black),
           title: Text(
-            project.projectName??"",
+            project.projectName ?? "",
             style: const TextStyle(color: Colors.black),
           ),
           actions: buildActions(),
@@ -173,6 +182,9 @@ class _ProjectDetail extends State<ProjectDetail> {
 
         List<String> platforms = ["android", "ios", "excel"];
         showSelectPlatformDialog(platforms, (platForm) {
+          if(platForm == null){
+            return;
+          }
           if (platForm == "excel") {
           } else {
             showImportLanguageDialog((language) {
@@ -192,6 +204,9 @@ class _ProjectDetail extends State<ProjectDetail> {
       onPressed: () {
         List<String> platforms = ["android", "ios", "excel"];
         showSelectPlatformDialog(platforms, (platForm) {
+          if(null == platForm){
+            return;
+          }
           if (platForm == "excel") {
             exportTranslationExcel();
           } else {
@@ -519,7 +534,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         languageItemArray.add(PopupMenuItem<Language>(value: language, child: ListTile(leading: const Icon(Icons.visibility), title: Text("${language.languageName}(${language.languageDes})"))));
       }
       showMenu(context: context, position: position, items: languageItemArray).then<void>((value) {
-        if (!mounted) return null;
+        if (!mounted && null != value) return null;
         importLanguageName = value;
         action(value);
       });
