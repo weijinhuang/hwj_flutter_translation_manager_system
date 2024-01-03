@@ -131,9 +131,9 @@ class _ProjectDetail extends State<ProjectDetail> {
                 barrierDismissible: true,
                 context: context,
                 builder: (context) {
-                  if(languageList.isNotEmpty) {
+                  if (languageList.isNotEmpty) {
                     return showTranslationEditDialog(null, context, null);
-                  }else{
+                  } else {
                     return AlertDialog(
                       elevation: 10,
                       backgroundColor: Colors.white,
@@ -182,7 +182,7 @@ class _ProjectDetail extends State<ProjectDetail> {
 
         List<String> platforms = ["android", "ios", "excel"];
         showSelectPlatformDialog(platforms, (platForm) {
-          if(platForm == null){
+          if (platForm == null) {
             return;
           }
           if (platForm == "excel") {
@@ -204,7 +204,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       onPressed: () {
         List<String> platforms = ["android", "ios", "excel"];
         showSelectPlatformDialog(platforms, (platForm) {
-          if(null == platForm){
+          if (null == platForm) {
             return;
           }
           if (platForm == "excel") {
@@ -802,7 +802,15 @@ class _ProjectDetail extends State<ProjectDetail> {
         for (String line in split) {
           var kv = line.split("=");
           if (kv.length == 2) {
-            Translation translation = Translation(kv[0], language.languageId ?? 0, kv[1], project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
+            var key = kv[0].trim();
+            key = key.substring(1, key.length - 1);
+            var value = kv[1].trim();
+            var lastIndex = value.lastIndexOf(";");
+            if(lastIndex != -1){
+              value = value.substring(0,lastIndex);
+            }
+            value = value.substring(1, value.length - 1);
+            Translation translation = Translation(key, language.languageId ?? 0, value, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
             translations.add(translation);
           }
         }
