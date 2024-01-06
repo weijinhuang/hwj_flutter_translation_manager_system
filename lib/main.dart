@@ -161,7 +161,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         margin: const EdgeInsets.all(5),
                         child: const Icon(
                           Icons.remove,
-                          color: Colors.blueGrey,
+                          color: Colors.white,
                         ),
                       ),
                     )

@@ -6,6 +6,7 @@ import 'dart:io' as io;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:hwj_translation_flutter/AddLanguagePage.dart';
 import 'package:hwj_translation_flutter/EditTranslationDetailPage.dart';
 import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
@@ -81,7 +82,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             if (languageListWrapper.code == 200) {
               languageList = languageListWrapper.data;
               languageList.sort((a, b) {
-                if (a.languageName == "en" || a.languageName == "zh") {
+                if (a.languageName == "en" || a.languageName == "zh"|| a.languageName == "zh-TW"|| a.languageName == "zh-CN") {
                   return 0;
                 } else {
                   return 1;
@@ -163,12 +164,13 @@ class _ProjectDetail extends State<ProjectDetail> {
     List<Widget> actions = [];
     actions.add(GestureDetector(
       onTap: () {
-        showDialog(
-            barrierDismissible: true,
-            context: context,
-            builder: (context) {
-              return showAddLanguageDialog();
-            });
+        toAddLanguagePage();
+        // showDialog(
+        //     barrierDismissible: true,
+        //     context: context,
+        //     builder: (context) {
+        //       return showAddLanguageDialog();
+        //     });
       },
       child: Container(
         margin: const EdgeInsets.only(left: 10, right: 20),
@@ -565,69 +567,70 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  Widget showAddLanguageDialog() {
-    return AlertDialog(
-      elevation: 10,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: const Text("添加新语言"),
-      content: SizedBox(
-        height: 300,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: 500,
-              height: 100,
-              child: TextFormField(
-                autofocus: true,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言id（如cn）", labelText: "语言id"),
-                onChanged: (value) {
-                  _newlanguageName = value;
-                },
-              ),
-            ),
-            SizedBox(
-              width: 500,
-              height: 200,
-              child: TextFormField(
-                autofocus: true,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言名字（如中文）", labelText: "语言名字"),
-                onChanged: (value) {
-                  _newLanguageName = value;
-                },
-              ),
-            )
-          ],
-        ),
-      ),
-      actions: [
-        SizedBox(
-            width: 200,
-            height: 30,
-            child: TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text("取消"))),
-        SizedBox(
-            width: 200,
-            height: 30,
-            child: TextButton(
-              onPressed: () {
-                addLanguageRemote();
-                Navigator.pop(context);
-              },
-              child: const Text(
-                "确定",
-                style: TextStyle(color: Colors.blueAccent),
-              ),
-            )),
-      ],
-    );
-  }
+  // Widget showAddLanguageDialog() {
+  //   return AlertDialog(
+  //     elevation: 10,
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  //     title: const Text("添加新语言"),
+  //     content: SizedBox(
+  //       height: 300,
+  //       child: Column(
+  //         mainAxisSize: MainAxisSize.min,
+  //         mainAxisAlignment: MainAxisAlignment.start,
+  //         children: [
+  //           SizedBox(
+  //             width: 500,
+  //             height: 100,
+  //             child: TextFormField(
+  //               autofocus: true,
+  //               textInputAction: TextInputAction.next,
+  //               decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言id（如cn）", labelText: "语言id"),
+  //               onChanged: (value) {
+  //                 _newlanguageName = value;
+  //               },
+  //             ),
+  //           ),
+  //           SizedBox(
+  //             width: 500,
+  //             height: 200,
+  //             child: TextFormField(
+  //               autofocus: true,
+  //               textInputAction: TextInputAction.next,
+  //               decoration: const InputDecoration(
+  //                   border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言名字（如中文）", labelText: "语言名字"),
+  //               onChanged: (value) {
+  //                 _newLanguageName = value;
+  //               },
+  //             ),
+  //           )
+  //         ],
+  //       ),
+  //     ),
+  //     actions: [
+  //       SizedBox(
+  //           width: 200,
+  //           height: 30,
+  //           child: TextButton(
+  //               onPressed: () {
+  //                 Navigator.pop(context);
+  //               },
+  //               child: const Text("取消"))),
+  //       SizedBox(
+  //           width: 200,
+  //           height: 30,
+  //           child: TextButton(
+  //             onPressed: () {
+  //               addLanguageRemote();
+  //               Navigator.pop(context);
+  //             },
+  //             child: const Text(
+  //               "确定",
+  //               style: TextStyle(color: Colors.blueAccent),
+  //             ),
+  //           )),
+  //     ],
+  //   );
+  // }
 
   showDeleteLanguageDialog(Language language) {
     return AlertDialog(
@@ -720,6 +723,13 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
+  void toAddLanguagePage() async {
+    List<Language>? newLangList = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddLanguagePage(project, languageList)));
+    if (newLangList != null && newLangList.isNotEmpty) {
+      addLanguageRemote(newLangList);
+    }
+  }
+
   // void addTranslation(Map<int, Translation> result, int languageId) {
   //   if (languageId == -1) {
   //     print("languageId:$languageId");
@@ -745,12 +755,16 @@ class _ProjectDetail extends State<ProjectDetail> {
   //   }
   // }
 
-  void addLanguageRemote() {
-    WJHttp().addLanguage(Language(_newlanguageName, _newLanguageName, project.projectId)).then((value) {
-      if (value.code == 200) {
-        fetchTranslation();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value.msg)));
+  void addLanguageRemote(List<Language> languageList) {
+    WJHttp().addLanguages(languageList).then((value) {
+      fetchTranslation();
+      if (value.data.isNotEmpty) {
+        var errorTipsBuffer = StringBuffer();
+        for (var element in value.data) {
+          errorTipsBuffer.write("${element.languageDes}(${element.languageName}),");
+        }
+        errorTipsBuffer.write("添加失败");
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorTipsBuffer.toString())));
       }
     });
   }
@@ -806,8 +820,8 @@ class _ProjectDetail extends State<ProjectDetail> {
             key = key.substring(1, key.length - 1);
             var value = kv[1].trim();
             var lastIndex = value.lastIndexOf(";");
-            if(lastIndex != -1){
-              value = value.substring(0,lastIndex);
+            if (lastIndex != -1) {
+              value = value.substring(0, lastIndex);
             }
             value = value.substring(1, value.length - 1);
             Translation translation = Translation(key, language.languageId ?? 0, value, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);

@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'net.g.dart';
@@ -20,8 +23,7 @@ class CommonResponse<DATA> {
   ) =>
       _$CommonResponseFromJson<DATA>(json, fromJsonDATA);
 
-  Map<String, dynamic> toJson(Object? Function(DATA data) toJsonDATA) =>
-      _$CommonResponseToJson(this, toJsonDATA);
+  Map<String, dynamic> toJson(Object? Function(DATA data) toJsonDATA) => _$CommonResponseToJson(this, toJsonDATA);
 }
 
 @JsonSerializable(genericArgumentFactories: true)
@@ -38,8 +40,7 @@ class CommonListResponse<DATA> {
   ) =>
       _$CommonListResponseFromJson<DATA>(json, fromJsonDATA);
 
-  Map<String, dynamic> toJson(Object? Function(DATA data) toJsonDATA) =>
-      _$CommonListResponseToJson(this, toJsonDATA);
+  Map<String, dynamic> toJson(Object? Function(DATA data) toJsonDATA) => _$CommonListResponseToJson(this, toJsonDATA);
 }
 
 @JsonSerializable()
@@ -54,15 +55,9 @@ class Translation {
   String? oldTranslationContent;
   String? selectedTranslationContent;
 
-  Translation(this.translationKey, this.languageId, this.translationContent,
-      this.projectId,
-      {this.translationId,
-      this.moduleId,
-      this.forceAdd,
-      this.oldTranslationContent});
+  Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent});
 
-  factory Translation.fromJson(Map<String, dynamic> json) =>
-      _$TranslationFromJson(json);
+  factory Translation.fromJson(Map<String, dynamic> json) => _$TranslationFromJson(json);
 
   Map<String, dynamic> toJson() => _$TranslationToJson(this);
 
@@ -79,8 +74,7 @@ class Project {
 
   Project(this.projectName, this.projectId);
 
-  factory Project.fromJson(Map<String, dynamic> json) =>
-      _$ProjectFromJson(json);
+  factory Project.fromJson(Map<String, dynamic> json) => _$ProjectFromJson(json);
 
   Map<String, dynamic> toJson() => _$ProjectToJson(this);
 }
@@ -91,12 +85,11 @@ class Language {
   String languageName;
   String languageDes;
   String projectId;
+  Color color = Colors.white;
 
-  Language(this.languageName, this.languageDes, this.projectId,
-      {this.languageId});
+  Language(this.languageName, this.languageDes, this.projectId, {this.languageId});
 
-  factory Language.fromJson(Map<String, dynamic> json) =>
-      _$LanguageFromJson(json);
+  factory Language.fromJson(Map<String, dynamic> json) => _$LanguageFromJson(json);
 
   Map<String, dynamic> toJson() => _$LanguageToJson(this);
 
@@ -130,9 +123,7 @@ class BaiduTranslationParam {
   String salt;
   String sign;
 
-  BaiduTranslationParam(
-      this.q, this.from, this.to, this.appid, this.salt, this.sign);
-
+  BaiduTranslationParam(this.q, this.from, this.to, this.appid, this.salt, this.sign);
 
   factory BaiduTranslationParam.fromJson(Map<String, dynamic> json) => _$BaiduTranslationParamFromJson(json);
 
@@ -146,9 +137,10 @@ class BaiduTranslationResult {
   List<BaiduTranslation?> trans_result;
   String? error_code;
 
-  BaiduTranslationResult(
-      this.from, this.to, this.trans_result, this.error_code);
+  BaiduTranslationResult(this.from, this.to, this.trans_result, this.error_code);
+
   factory BaiduTranslationResult.fromJson(Map<String, dynamic> json) => _$BaiduTranslationResultFromJson(json);
+
   // factory  BaiduTranslationResult.fromJson2(Map<String, dynamic> json){
   //   if(json == null){
   //     return null;
@@ -160,15 +152,14 @@ class BaiduTranslationResult {
 }
 
 @JsonSerializable()
-class BaiduTranslation{
+class BaiduTranslation {
   String? src;
 
   String? dst;
 
-
   BaiduTranslation();
+
   factory BaiduTranslation.fromJson(Map<String, dynamic> json) => _$BaiduTranslationFromJson(json);
 
   Map<String, dynamic> toJson() => _$BaiduTranslationToJson(this);
 }
-

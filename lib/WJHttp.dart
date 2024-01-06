@@ -111,6 +111,23 @@ class WJHttp {
     }
   }
 
+  Future<CommonListResponse<Language>> addLanguages(List<Language> translation) async {
+    String json = jsonEncode(translation.map((e) => e.toJson()).toList(growable: false));
+    print("添加语言列表:$json");
+    final response = await http.post(Uri.parse("http://$ip:80/addLanguages"),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: json);
+    if (response.statusCode == 200) {
+      return CommonListResponse<Language>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
+        return Language.fromJson(json);
+      });
+    } else {
+      throw Exception("net error");
+    }
+  }
+
   Future<CommonResponse<void>> addModule(Module module) async {
     print("addLanguage");
     final response = await http.post(Uri.parse("http://$ip:80/addModule"),
