@@ -14,6 +14,7 @@ import 'package:hwj_translation_flutter/net.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:xml/xml.dart';
 import 'package:excel/excel.dart';
+import 'package:fuzzywuzzy/fuzzywuzzy.dart';
 
 class ProjectDetail extends StatefulWidget {
   ProjectDetail(this.project);
@@ -31,15 +32,13 @@ class _ProjectDetail extends State<ProjectDetail> {
   List<Module> modules = [];
   List<Translation> translationListShowing = [];
 
-  List<Translation> translationList = List.empty();
+  List<Translation> originalTranslationList = List.empty();
   Map<int, Map<String, Map<int, Translation>>> translationRootMap = HashMap();
 
   Module? mCurrentSelectedModule;
 
   Project project;
 
-  String _newlanguageName = "";
-  String _newLanguageName = "";
   ScrollController titleController = ScrollController();
   ScrollController translationListController = ScrollController();
 
@@ -50,14 +49,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   void initState() {
     super.initState();
     fetchTranslation();
-    titleController.addListener(() {
-      // if (contentScrolling) {
-      //   return;
-      // }
-      // titleScrolling = true;
-      // print("titleController scroll ${titleController.offset}");
-      // translationListController.jumpTo(titleController.offset);
-    });
+    titleController.addListener(() {});
     translationListController.addListener(() {
       if (titleScrolling) {
         return;
@@ -82,36 +74,17 @@ class _ProjectDetail extends State<ProjectDetail> {
             if (languageListWrapper.code == 200) {
               languageList = languageListWrapper.data;
               languageList.sort((a, b) {
-                if (a.languageName == "en" || a.languageName == "zh"|| a.languageName == "zh-TW"|| a.languageName == "zh-CN") {
+                if (a.languageName == "en" || a.languageName == "zh" || a.languageName == "zh-TW" || a.languageName == "zh-CN") {
                   return 0;
                 } else {
                   return 1;
                 }
               });
-              for (Language element in languageList) {
-                print("语言：${element.languageName}");
-              }
               http.fetchTranslation(project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? -1).then((translationListWrapper) {
+                originalTranslationList = translationListWrapper.data;
+                translationListShowing.addAll(originalTranslationList);
                 setState(() {
-                  translationList = translationListWrapper.data;
-                  for (var element in translationList) {
-                    Map<String, Map<int, Translation>>? translationKeyLanguageTranslationMap = translationRootMap[element.moduleId];
-                    if (translationKeyLanguageTranslationMap == null) {
-                      print("创建translationKeyLanguageTranslationMap：moduleId:${element.moduleId}");
-                      translationKeyLanguageTranslationMap = HashMap();
-                      translationRootMap[element.moduleId ?? -1] = translationKeyLanguageTranslationMap;
-                    }
-
-                    Map<int, Translation>? languageTranslationMap = translationKeyLanguageTranslationMap[element.translationKey];
-                    if (null == languageTranslationMap) {
-                      languageTranslationMap = HashMap();
-                      // print("创建languageTranslationMap：translationKey:${element.translationKey}");
-                      translationKeyLanguageTranslationMap[element.translationKey] = languageTranslationMap;
-                    }
-                    int langId = element.languageId;
-                    languageTranslationMap[langId] = element;
-                    // print("languageTranslationMap[element.languageId] = element 语言id：$langId");
-                  }
+                  rebuildTranslationData();
                 });
               });
             }
@@ -121,10 +94,32 @@ class _ProjectDetail extends State<ProjectDetail> {
     });
   }
 
+  void rebuildTranslationData() {
+    if (translationListShowing.isNotEmpty) {
+      translationRootMap.clear();
+      for (var element in translationListShowing) {
+        Map<String, Map<int, Translation>>? keyLanguageTranslationMap = translationRootMap[element.moduleId];
+        if (keyLanguageTranslationMap == null) {
+          keyLanguageTranslationMap = HashMap();
+          translationRootMap[element.moduleId ?? -1] = keyLanguageTranslationMap;
+        }
+
+        Map<int, Translation>? languageTranslationMap = keyLanguageTranslationMap[element.translationKey];
+        if (null == languageTranslationMap) {
+          languageTranslationMap = HashMap();
+          keyLanguageTranslationMap[element.translationKey] = languageTranslationMap;
+        }
+        languageTranslationMap[element.languageId] = element;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         floatingActionButton: FloatingActionButton(
+          enableFeedback: false,
           tooltip: "添加翻译",
           elevation: 30,
           onPressed: () async {
@@ -133,7 +128,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 context: context,
                 builder: (context) {
                   if (languageList.isNotEmpty) {
-                    return showTranslationEditDialog(null, context, null);
+                    return buildTranslationEditDialog(null, context, null);
                   } else {
                     return AlertDialog(
                       elevation: 10,
@@ -165,12 +160,6 @@ class _ProjectDetail extends State<ProjectDetail> {
     actions.add(GestureDetector(
       onTap: () {
         toAddLanguagePage();
-        // showDialog(
-        //     barrierDismissible: true,
-        //     context: context,
-        //     builder: (context) {
-        //       return showAddLanguageDialog();
-        //     });
       },
       child: Container(
         margin: const EdgeInsets.only(left: 10, right: 20),
@@ -180,8 +169,6 @@ class _ProjectDetail extends State<ProjectDetail> {
     actions.add(TextButton(
       key: importBtnKey,
       onPressed: () {
-        // showImportLanguageDialog((value) => selectFile(value));
-
         List<String> platforms = ["android", "ios", "excel"];
         showSelectPlatformDialog(platforms, (platForm) {
           if (platForm == null) {
@@ -189,7 +176,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           }
           if (platForm == "excel") {
           } else {
-            showImportLanguageDialog((language) {
+            buildImportLanguageDialog((language) {
               if (platForm == "android") {
                 importAndroid(language);
               } else {
@@ -202,7 +189,6 @@ class _ProjectDetail extends State<ProjectDetail> {
       child: const Text("导入"),
     ));
     actions.add(TextButton(
-      child: const Text("导出"),
       onPressed: () {
         List<String> platforms = ["android", "ios", "excel"];
         showSelectPlatformDialog(platforms, (platForm) {
@@ -215,9 +201,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             WJHttp().exportTranslationZip(project.projectId, platForm).then((value) {
               var base64 = base64Encode(value.bodyBytes);
               var downloadName = "LongVisionFullTranslation.zip";
-
               final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
-
               anchor.download = downloadName;
               var body = document.body;
               if (null != body) {
@@ -231,6 +215,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           }
         });
       },
+      child: const Text("导出"),
     ));
     return actions;
   }
@@ -250,13 +235,13 @@ class _ProjectDetail extends State<ProjectDetail> {
             height: 40,
             child: TextFormField(
               autofocus: true,
-              textInputAction: TextInputAction.next,
+              textInputAction: TextInputAction.search,
               decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
               onChanged: (value) {
                 // project.projectName = value;
               },
               onFieldSubmitted: (value) {
-                print("onFieldSubmitted");
+                searchTranslation(value);
               },
             ),
           ),
@@ -316,20 +301,20 @@ class _ProjectDetail extends State<ProjectDetail> {
                 barrierDismissible: true,
                 context: context,
                 builder: (context) {
-                  return showDeleteLanguageDialog(language);
+                  return buildDeleteLanguageDialog(language);
                 });
           });
       widgetList.add(gestureDetector);
     }
 
-    return Container(
+    return SizedBox(
         height: 60,
         child: ListView(
           itemExtent: 210,
-          children: widgetList,
-          physics: NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           scrollDirection: Axis.horizontal,
           controller: titleController,
+          children: widgetList,
         ));
   }
 
@@ -346,7 +331,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               barrierDismissible: true,
               context: context,
               builder: (context) {
-                return showDeleteTranslationDialog(translationKey);
+                return buildDeleteTranslationDialog(translationKey);
               });
         },
       ));
@@ -360,7 +345,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 barrierDismissible: true,
                 context: context,
                 builder: (context) {
-                  return showTranslationEditDialog(translationKey, context, languageTranslationMap);
+                  return buildTranslationEditDialog(translationKey, context, languageTranslationMap);
                 });
             handleTranslationEdit(result);
             // if (null != result && result.isNotEmpty) {
@@ -431,7 +416,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  Widget showTranslationEditDialog(String? translationKey, BuildContext context, Map<int, Translation>? translationIdContentMap) {
+  Widget buildTranslationEditDialog(String? translationKey, BuildContext context, Map<int, Translation>? translationIdContentMap) {
     String? titleText;
     if (translationKey == null) {
       titleText = "添加语言";
@@ -480,46 +465,21 @@ class _ProjectDetail extends State<ProjectDetail> {
               }
             } else {
               languageContentMapChange.keys.forEach((languageId) {
-                Translation newTranslation =
-                    Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                Translation newTranslation = Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
                 translationList.add(newTranslation);
               });
             }
             addTranslationRemote(translationList, true);
-
-            // else{
-            //   languageContentMapChange.keys.forEach((languageId) {
-            //     Translation newTranslation =
-            //     Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
-            //     translationList.add(newTranslation);
-            //   });
-            // }
           }
         }
       }
     }
-    // if (null != result && result.isNotEmpty) {
-    //   for (Translation translation in result) {
-    //     if (null != mCurrentSelectedModule) {
-    //       int? moduleId = mCurrentSelectedModule?.moduleId;
-    //       if (null != moduleId) {
-    //         var translationKeyMap = translationRootMap[moduleId];
-    //         if (null != translationKeyMap) {
-    //           var localTranslationKeyLanguageMap = translationKeyMap[translation.translationKey];
-    //           if (null != localTranslationKeyLanguageMap) {
-    //             localTranslationKeyLanguageMap[translation.languageId] = translation;
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
   }
 
   Language? importLanguageName = null;
   String? importPlatform = "";
 
-  void showImportLanguageDialog(Function action) {
+  void buildImportLanguageDialog(Function action) {
     RenderBox? button = importBtnKey.currentContext?.findRenderObject() as RenderBox?;
     final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
     if (null != button && null != overlay) {
@@ -567,72 +527,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  // Widget showAddLanguageDialog() {
-  //   return AlertDialog(
-  //     elevation: 10,
-  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-  //     title: const Text("添加新语言"),
-  //     content: SizedBox(
-  //       height: 300,
-  //       child: Column(
-  //         mainAxisSize: MainAxisSize.min,
-  //         mainAxisAlignment: MainAxisAlignment.start,
-  //         children: [
-  //           SizedBox(
-  //             width: 500,
-  //             height: 100,
-  //             child: TextFormField(
-  //               autofocus: true,
-  //               textInputAction: TextInputAction.next,
-  //               decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言id（如cn）", labelText: "语言id"),
-  //               onChanged: (value) {
-  //                 _newlanguageName = value;
-  //               },
-  //             ),
-  //           ),
-  //           SizedBox(
-  //             width: 500,
-  //             height: 200,
-  //             child: TextFormField(
-  //               autofocus: true,
-  //               textInputAction: TextInputAction.next,
-  //               decoration: const InputDecoration(
-  //                   border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))), filled: false, hintText: "请输入语言名字（如中文）", labelText: "语言名字"),
-  //               onChanged: (value) {
-  //                 _newLanguageName = value;
-  //               },
-  //             ),
-  //           )
-  //         ],
-  //       ),
-  //     ),
-  //     actions: [
-  //       SizedBox(
-  //           width: 200,
-  //           height: 30,
-  //           child: TextButton(
-  //               onPressed: () {
-  //                 Navigator.pop(context);
-  //               },
-  //               child: const Text("取消"))),
-  //       SizedBox(
-  //           width: 200,
-  //           height: 30,
-  //           child: TextButton(
-  //             onPressed: () {
-  //               addLanguageRemote();
-  //               Navigator.pop(context);
-  //             },
-  //             child: const Text(
-  //               "确定",
-  //               style: TextStyle(color: Colors.blueAccent),
-  //             ),
-  //           )),
-  //     ],
-  //   );
-  // }
-
-  showDeleteLanguageDialog(Language language) {
+  buildDeleteLanguageDialog(Language language) {
     return AlertDialog(
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -664,7 +559,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  showDeleteTranslationDialog(String translationKey) {
+  buildDeleteTranslationDialog(String translationKey) {
     return AlertDialog(
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -729,31 +624,6 @@ class _ProjectDetail extends State<ProjectDetail> {
       addLanguageRemote(newLangList);
     }
   }
-
-  // void addTranslation(Map<int, Translation> result, int languageId) {
-  //   if (languageId == -1) {
-  //     print("languageId:$languageId");
-  //     return;
-  //   }
-  //   if (result.isNotEmpty) {
-  //     print("result.isNotEmpty");
-  //     var languageIdList = result.keys.toList(growable: false);
-  //     String key = result[languageIdList[0]]?.translationKey ?? "";
-  //     if (key.isEmpty) {
-  //       print("key.isEmpty");
-  //       return;
-  //     }
-  //     print("key:$key");
-  //     for (int i = 1; i < languageIdList.length; i++) {
-  //       int languageId = languageIdList[i];
-  //       Translation translation = Translation(key, languageId, result[languageId]?.translationContent ?? "", project.projectId);
-  //       translationList.add(translation);
-  //     }
-  //     addTranslationRemote(translationList);
-  //   } else {
-  //     print("result.isEmpty");
-  //   }
-  // }
 
   void addLanguageRemote(List<Language> languageList) {
     WJHttp().addLanguages(languageList).then((value) {
@@ -914,10 +784,6 @@ class _ProjectDetail extends State<ProjectDetail> {
             excel.appendRow(defaultSheet ?? "Sheet1", contentRow);
           }
         }
-        // for (Map<int, Translation> translationLanguageContentMap
-        // in translationListInModule.values) {
-        //
-        // }
       }
     }
 
@@ -939,114 +805,21 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  void exportTranslationAndroid() {
-    WJHttp().exportTranslationZip(project.projectId, "android").then((value) {
-      var base64 = base64Encode(value.bodyBytes);
-      var downloadName = "LongVisionFullTranslation.zip";
-
-      final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
-
-      anchor.download = downloadName;
-      var body = document.body;
-      if (null != body) {
-        body.append(anchor);
-      }
-      anchor.click();
-      anchor.remove();
-      print("exportTranslationExcel end");
-    });
-    return;
-
-    // var xmlDocument = exportTranslationXML();
-    //
-    // var string = xmlDocument.toXmlString();
-    // var downloadName = "strings.xml";
-    //
-    // final anchor = AnchorElement(href: '''data:application/octet-stream;utf-8,$string''')..target = 'blank';
-    //
-    // anchor.download = downloadName;
-    // var body = document.body;
-    // if (null != body) {
-    //   body.append(anchor);
-    // }
-    // anchor.click();
-    // anchor.remove();
-  }
-
-  XmlDocument exportTranslationXML(Language language) {
-    final builder = XmlBuilder(optimizeNamespaces: true);
-    builder.processing('xml', 'version="1.0" encoding="utf-8"');
-    builder.element('resources', nest: () {
-      for (Module module in modules) {
-        Map<String, Map<int, Translation>>? translationListInModule = translationRootMap[module.moduleId];
-        if (null != translationListInModule) {
-          for (Map<int, Translation> translationLanguageContentMap in translationListInModule.values) {
-            Translation? translation = translationLanguageContentMap[language.languageId];
-            if (translation != null) {
-              if (translation.translationContent.contains("|")) {
-                //数组
-                var stringArray = translation.translationContent.split("|");
-                builder.element("string-array", nest: () {
-                  builder.attribute("name", translation.translationKey);
-                  print(translation.translationKey);
-                  for (int i = 0; i < stringArray.length; i++) {
-                    String str = stringArray[i];
-                    builder.element("item", nest: str);
-                    print("$str");
-                  }
-                });
-              } else {
-                builder.element("string", nest: () {
-                  builder.attribute("name", translation.translationKey);
-                  builder.text(translation.translationContent);
-                });
-              }
-            }
-          }
+  void searchTranslation(String key) {
+    if (key.isNotEmpty) {
+      translationListShowing.clear();
+      originalTranslationList.forEach((element) {
+        var ratioValue = ratio(key, element.translationContent);
+        if (ratioValue > 50) {
+          translationListShowing.add(element);
         }
-      }
+      });
+    }else{
+      translationListShowing.clear();
+      translationListShowing.addAll(originalTranslationList);
+    }
+    setState(() {
+      rebuildTranslationData();
     });
-    final xmlDocument = builder.buildDocument();
-    return xmlDocument;
-  }
-
-  void exportTranslationIOS(Language language) {
-    StringBuffer sb = StringBuffer();
-    for (Module module in modules) {
-      Map<String, Map<int, Translation>>? translationListInModule = translationRootMap[module.moduleId];
-      if (null != translationListInModule) {
-        for (Map<int, Translation> translationLanguageContentMap in translationListInModule.values) {
-          Translation? translation = translationLanguageContentMap[language.languageId];
-          if (translation != null) {
-            String trans;
-            if (translation.translationContent.contains("|")) {
-              //数组
-              var stringArray = translation.translationContent.split("|");
-              for (int i = 0; i < stringArray.length; i++) {
-                String str = stringArray[i];
-                trans = '''"${translation.translationKey}"$i="$str"\n''';
-                print("trans$trans");
-              }
-            } else {
-              // trans = "\n\"$key\"=$content";
-              trans = ''' "${translation.translationKey}"="${translation.translationContent}";\n''';
-              print("trans$trans");
-              sb.write(trans);
-            }
-          }
-        }
-      }
-    }
-    var string = sb.toString();
-    var downloadName = "Localizable.strings";
-    final anchor = AnchorElement(href: 'data:application/octet-stream;utf-8,$string')..target = 'blank';
-
-    anchor.download = downloadName;
-    var body = document.body;
-    if (null != body) {
-      body.append(anchor);
-    }
-    anchor.click();
-    anchor.remove();
   }
 }

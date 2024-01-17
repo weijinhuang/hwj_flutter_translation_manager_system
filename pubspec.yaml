@@ -56,6 +56,7 @@ dev_dependencies:
   excel: ^4.0.0
   crypto: ^3.0.3
   flutter_archive: ^5.0.0
+  fuzzywuzzy: ^1.1.6
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
