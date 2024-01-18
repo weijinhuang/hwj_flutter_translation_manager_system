@@ -34,8 +34,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
   @override
   void initState() {
     super.initState();
-    _repeatController = AnimationController(vsync: this, duration: const Duration(seconds: 2))
-      ..repeat();
+    _repeatController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
     _animation = Tween<double>(begin: 0, end: 1).animate(_repeatController);
 
     if (null != widget.languageIdContentMapParam) {
@@ -59,7 +58,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
     // print("_EditTranslationDetailPage build:");
     List<Widget> widgetList = [];
     Widget keyText;
-    if(translationKeyChange == ""){
+    if (translationKeyChange == "") {
       keyText = TextFormField(
         autofocus: true,
         textInputAction: TextInputAction.next,
@@ -69,7 +68,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
           print("onChange:translationKeyChange:$value");
         },
       );
-    }else{
+    } else {
       keyText = Text(translationKeyChange);
     }
 
@@ -81,17 +80,8 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
           Expanded(
             child: keyText,
           ),
-          IconButton(
-              onPressed: () {
-                List<Language> languageToTranslate = [];
-                for (Language language in widget.languageList) {
-                  if (language.languageName != defaultFrom) {
-                    languageToTranslate.add(language);
-                  }
-                }
-                translationAll(widget.languageList, 0);
-              },
-              icon: const Icon(Icons.adb))
+          buildTranslationAllBtn("google"),
+          buildTranslationAllBtn("baidu"),
         ],
       ),
     );
@@ -100,29 +90,20 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
       Language language = widget.languageList[i];
       var translationContent = translationContentMap[language.languageId];
 
-      Widget button;
-      print("正在加载:$loadingLanguageName");
-      if (loadingLanguageName == language.languageName) {
-        button = RotationTransition(
-          turns: _animation,
-          child: IconButton(
-              onPressed: () {
-                translateByBaidu(language, () {
-                  loadingLanguageName = "";
-                });
-              },
-              icon: const Icon(Icons.translate)),
-        );
-      } else {
-        button = IconButton(
-            onPressed: () {
-              translateByBaidu(language, () {
-                loadingLanguageName = "";
-              });
-            },
-            icon: const Icon(Icons.translate));
-      }
-      // print("for:$translationContent");
+      Widget googleBtn = buildTranslateBtn(language, "google", () {
+        translateByGoogle(language, () {
+          setState(() {
+            loadingLanguageName = "";
+          });
+        });
+      });
+      Widget baiduBtn = buildTranslateBtn(language, "baidu", () {
+        translateByBaidu(language, () {
+          setState(() {
+            loadingLanguageName = "";
+          });
+        });
+      });
       Widget translationItem = SizedBox(
         width: 500,
         height: 80,
@@ -148,7 +129,8 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
                 },
               ),
             ),
-            button
+            googleBtn,
+            baiduBtn
           ],
         ),
       );
@@ -182,29 +164,56 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
     );
   }
 
+  Widget buildTranslateBtn(Language language, String translatePlatform, Function onTap) {
+    String imageRes;
+    if (translatePlatform == "google") {
+      imageRes = 'images/google.png';
+    } else {
+      imageRes = 'images/baidu.png';
+    }
+    Widget translateBtn;
+    print("正在加载:$loadingLanguageName");
+    if (loadingLanguageName == language.languageName) {
+      translateBtn = RotationTransition(
+        turns: _animation,
+        child: Image.asset(
+          imageRes,
+          width: 50,
+          height: 50,
+        ),
+      );
+    } else {
+      translateBtn = GestureDetector(
+        child: Image.asset(
+          imageRes,
+          width: 50,
+          height: 50,
+        ),
+        onTap: () {
+          onTap();
+        },
+      );
+    }
+    return translateBtn;
+  }
+
   @override
   void dispose() {
     _repeatController.dispose();
     super.dispose();
   }
 
-  void translateByBaidu(Language to, Function callback) {
+  void translateByGoogle(Language to, Function callback) {
     String? src = defaultTranslateSrc;
     if (null != src) {
-      loadingLanguageName = to.languageName;
-      WJHttp().translateByBaidu(src, defaultFrom, to.languageName).then((value) {
+      setState(() {
+        loadingLanguageName = to.languageName;
+      });
+      WJHttp().translateByGoogle(src, defaultFrom, to.languageName).then((value) {
         if (value.code == 200) {
-          List<BaiduTranslation?>? translationResult = value.data?.trans_result;
-          if (translationResult != null && translationResult.isNotEmpty) {
-            var translationDetail = translationResult[0];
-            if (null != translationDetail) {
-              String? dst = translationDetail.dst;
-              if (dst != null) {
-                setState(() {
-                  translationContentMap[to.languageId ?? 0] = dst;
-                });
-              }
-            }
+          String? translationResult = value.data?.transResult;
+          if (translationResult != null) {
+            translationContentMap[to.languageId ?? 0] = translationResult;
           }
         }
         callback();
@@ -212,7 +221,50 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
     }
   }
 
-  void translationAll(List<Language> languageToTranslate, int currentPos) {
+  void translateByBaidu(Language to, Function callback) {
+    String? src = defaultTranslateSrc;
+    if (null != src) {
+      setState(() {
+        loadingLanguageName = to.languageName;
+      });
+      WJHttp().translateByBaidu(src, defaultFrom, to.languageName).then((value) {
+        if (value.code == 200) {
+          String? translationResult = value.data?.transResult;
+          if (translationResult != null) {
+            translationContentMap[to.languageId ?? 0] = translationResult;
+          }
+        }
+        callback();
+      });
+    }
+  }
+
+  Widget buildTranslationAllBtn(String translatePlatform) {
+    List<Language> languageToTranslate = [];
+    String imageRes;
+    if (translatePlatform == "google") {
+      imageRes = 'images/google.png';
+    } else {
+      imageRes = 'images/baidu.png';
+    }
+    return GestureDetector(
+      child: Image.asset(
+        imageRes,
+        width: 50,
+        height: 50,
+      ),
+      onTap: () {
+        for (Language language in widget.languageList) {
+          if (language.languageName != defaultFrom) {
+            languageToTranslate.add(language);
+          }
+        }
+        translationAll(widget.languageList, 0, translatePlatform);
+      },
+    );
+  }
+
+  void translationAll(List<Language> languageToTranslate, int currentPos, String translatePlatform) {
     print("translationAll:currentPos:$currentPos");
     if (currentPos >= languageToTranslate.length) {
       loadingLanguageName = "";
@@ -226,11 +278,20 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
       return;
     }
     Language to = languageToTranslate[currentPos];
-    translateByBaidu(to, () {
-      Future.delayed(const Duration(seconds: 1), () {
-        currentPos++;
-        translationAll(languageToTranslate, currentPos);
+    if (translatePlatform == "baidu") {
+      translateByBaidu(to, () {
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          currentPos++;
+          translationAll(languageToTranslate, currentPos, translatePlatform);
+        });
       });
-    });
+    } else {
+      translateByGoogle(to, () {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          currentPos++;
+          translationAll(languageToTranslate, currentPos, translatePlatform);
+        });
+      });
+    }
   }
 }

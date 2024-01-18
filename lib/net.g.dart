@@ -98,13 +98,14 @@ Language _$LanguageFromJson(Map<String, dynamic> json) => Language(
       json['languageDes'] as String,
       json['projectId'] as String,
       languageId: json['languageId'] as int?,
-    );
+    )..color = json['color'] as int?;
 
 Map<String, dynamic> _$LanguageToJson(Language instance) => <String, dynamic>{
       'languageId': instance.languageId,
       'languageName': instance.languageName,
       'languageDes': instance.languageDes,
       'projectId': instance.projectId,
+      'color': instance.color,
     };
 
 Module _$ModuleFromJson(Map<String, dynamic> json) => Module(
@@ -161,6 +162,40 @@ Map<String, dynamic> _$BaiduTranslationResultToJson(
       'to': instance.to,
       'trans_result': instance.trans_result.map((e) => e?.toJson()).toList(),
       'error_code': instance.error_code,
+    };
+
+ThirdPartyTranslationResult _$ThirdPartyTranslationResultFromJson(
+        Map<String, dynamic> json) =>
+    ThirdPartyTranslationResult(
+      json['sourceLanguage'] as String?,
+      json['targetLanguage'] as String?,
+      json['transResult'] as String?,
+      json['errorCode'] as int?,
+    );
+
+Map<String, dynamic> _$ThirdPartyTranslationResultToJson(
+        ThirdPartyTranslationResult instance) =>
+    <String, dynamic>{
+      'sourceLanguage': instance.sourceLanguage,
+      'targetLanguage': instance.targetLanguage,
+      'transResult': instance.transResult,
+      'errorCode': instance.errorCode,
+    };
+
+GoogleTranslationParam _$GoogleTranslationParamFromJson(
+        Map<String, dynamic> json) =>
+    GoogleTranslationParam(
+      json['sourceLanguage'] as String?,
+      json['targetLanguage'] as String?,
+      json['content'] as String?,
+    );
+
+Map<String, dynamic> _$GoogleTranslationParamToJson(
+        GoogleTranslationParam instance) =>
+    <String, dynamic>{
+      'sourceLanguage': instance.sourceLanguage,
+      'targetLanguage': instance.targetLanguage,
+      'content': instance.content,
     };
 
 BaiduTranslation _$BaiduTranslationFromJson(Map<String, dynamic> json) =>

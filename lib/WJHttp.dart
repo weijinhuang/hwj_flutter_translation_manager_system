@@ -17,7 +17,26 @@ class WJHttp {
     return response;
   }
 
-  Future<CommonResponse<BaiduTranslationResult?>> translateByBaidu(String sourceContent, String from, String to) async {
+  Future<CommonResponse<ThirdPartyTranslationResult?>> translateByGoogle(String sourceContent, String sourceLanguage, String targetLanguage) async {
+    GoogleTranslationParam translationParam = GoogleTranslationParam(sourceLanguage, targetLanguage, sourceContent);
+
+    final response = await http.post(Uri.parse("http://$ip:80/translateByGoogle"),
+        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(translationParam.toJson()));
+    print("translateByGoogle${response.body}");
+    if (response.statusCode == 200) {
+      return CommonResponse<ThirdPartyTranslationResult?>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
+        if (json != null) {
+          return ThirdPartyTranslationResult.fromJson(json);
+        } else {
+          return null;
+        }
+      });
+    } else {
+      return CommonResponse(-1, "", null);
+    }
+  }
+
+  Future<CommonResponse<ThirdPartyTranslationResult?>> translateByBaidu(String sourceContent, String from, String to) async {
     var salt = Random().nextInt(100000).toString();
     var str = "20231209001905732$sourceContent$salt$baiduScreat";
 
@@ -30,9 +49,9 @@ class WJHttp {
         headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(translationParam.toJson()));
     print("translateByBaidu${response.body}");
     if (response.statusCode == 200) {
-      return CommonResponse<BaiduTranslationResult?>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
+      return CommonResponse<ThirdPartyTranslationResult?>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
         if (json != null) {
-          return BaiduTranslationResult.fromJson(json);
+          return ThirdPartyTranslationResult.fromJson(json);
         } else {
           return null;
         }

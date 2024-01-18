@@ -138,7 +138,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                     );
                   }
                 });
-            handleTranslationEdit(result);
+            handleTranslationEdit(result, true);
           },
           child: const Icon(Icons.add),
         ),
@@ -347,7 +347,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 builder: (context) {
                   return buildTranslationEditDialog(translationKey, context, languageTranslationMap);
                 });
-            handleTranslationEdit(result);
+            handleTranslationEdit(result, false);
             // if (null != result && result.isNotEmpty) {
             //   for (Translation translation in result) {
             //     if (null != mCurrentSelectedModule) {
@@ -437,7 +437,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  void handleTranslationEdit(Map<String, Map<int, String?>?>? translationContentMap) {
+  void handleTranslationEdit(Map<String, Map<int, String?>?>? translationContentMap, bool add) {
     if (null != translationContentMap) {
       String translationKey = translationContentMap.keys.first;
       Map<int, String?>? languageContentMapChange = translationContentMap.values.first;
@@ -469,7 +469,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 translationList.add(newTranslation);
               });
             }
-            addTranslationRemote(translationList, true);
+            addTranslationRemote(translationList, add: add, reFetchData: true);
           }
         }
       }
@@ -590,8 +590,8 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  void addTranslationRemote(List<Translation> translationList, bool reFetchData) {
-    WJHttp().addTranslations(translationList).then((value) {
+  void addTranslationRemote(List<Translation> translationList, {bool reFetchData = true, bool add = true}) {
+    onValue(value) {
       if (value.code == 200) {
         print("添加翻译成功");
         // setState(() {});
@@ -608,7 +608,13 @@ class _ProjectDetail extends State<ProjectDetail> {
         print("添加翻译失败，失败列表:${value.data.length}");
       }
       // fetchTranslation();
-    });
+    }
+
+    if (add) {
+      WJHttp().addTranslations(translationList).then(onValue);
+    } else {
+      WJHttp().updateTranslations(translationList).then(onValue);
+    }
   }
 
   void toComparePage(List<Translation> translationList) async {
@@ -698,7 +704,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             translations.add(translation);
           }
         }
-        addTranslationRemote(translations, true);
+        addTranslationRemote(translations, reFetchData: true, add: true);
       }
     }
   }
@@ -748,7 +754,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           }
         }
       }
-      addTranslationRemote(translations, true);
+      addTranslationRemote(translations, reFetchData: true, add: true);
     }
   }
 

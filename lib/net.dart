@@ -85,7 +85,7 @@ class Language {
   String languageName;
   String languageDes;
   String projectId;
-  Color color = Colors.white;
+  int? color = Colors.white.value;
 
   Language(this.languageName, this.languageDes, this.projectId, {this.languageId});
 
@@ -141,15 +141,41 @@ class BaiduTranslationResult {
 
   factory BaiduTranslationResult.fromJson(Map<String, dynamic> json) => _$BaiduTranslationResultFromJson(json);
 
-  // factory  BaiduTranslationResult.fromJson2(Map<String, dynamic> json){
-  //   if(json == null){
-  //     return null;
-  //   }
-  //   return  _$BaiduTranslationResultFromJson(json);
-  // }
+
 
   Map<String, dynamic> toJson() => _$BaiduTranslationResultToJson(this);
 }
+
+
+@JsonSerializable()
+class ThirdPartyTranslationResult {
+  String? sourceLanguage;
+  String? targetLanguage;
+  String? transResult;
+  int? errorCode;
+
+  ThirdPartyTranslationResult(this.sourceLanguage, this.targetLanguage, this.transResult, this.errorCode);
+
+  factory ThirdPartyTranslationResult.fromJson(Map<String, dynamic> json) => _$ThirdPartyTranslationResultFromJson(json);
+
+
+  Map<String, dynamic> toJson() => _$ThirdPartyTranslationResultToJson(this);
+}
+@JsonSerializable()
+class GoogleTranslationParam {
+  String? sourceLanguage;
+  String? targetLanguage;
+  String? content;
+
+  GoogleTranslationParam(this.sourceLanguage, this.targetLanguage, this.content);
+
+  factory GoogleTranslationParam.fromJson(Map<String, dynamic> json) => _$GoogleTranslationParamFromJson(json);
+
+
+  Map<String, dynamic> toJson() => _$GoogleTranslationParamToJson(this);
+}
+
+
 
 @JsonSerializable()
 class BaiduTranslation {

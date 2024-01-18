@@ -20,9 +20,9 @@ class _AddLanguagePageState extends State<AddLanguagePage> {
   String _newLanguageDes = "";
   List<String> localLanguageNameList = [];
 
-  Color originalColor = Colors.lightBlueAccent;
-  Color unSelectedColor = Colors.white;
-  Color selectedColor = Colors.blueAccent;
+  int originalColor = Colors.lightBlueAccent.value;
+  int unSelectedColor = Colors.white.value;
+  int selectedColor = Colors.blueAccent.value;
 
   @override
   void initState() {
@@ -261,7 +261,7 @@ class _AddLanguagePageState extends State<AddLanguagePage> {
       },
       child: Card(
           elevation: 2,
-          color: language.color,
+          color: Color(language.color??unSelectedColor),
           shadowColor: Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
           child: Center(
@@ -291,7 +291,7 @@ class _AddLanguagePageState extends State<AddLanguagePage> {
       },
       child: Card(
           elevation: 2,
-          color: unSelectedColor,
+          color: Color(unSelectedColor),
           shadowColor: Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
           child: const Center(
