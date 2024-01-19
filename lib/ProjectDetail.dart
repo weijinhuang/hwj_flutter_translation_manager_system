@@ -95,7 +95,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   void rebuildTranslationData() {
-    if (translationListShowing.isNotEmpty) {
+    // if (translationListShowing.isNotEmpty) {
       translationRootMap.clear();
       for (var element in translationListShowing) {
         Map<String, Map<int, Translation>>? keyLanguageTranslationMap = translationRootMap[element.moduleId];
@@ -111,7 +111,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         }
         languageTranslationMap[element.languageId] = element;
       }
-    }
+    // }
   }
 
   @override
@@ -226,23 +226,34 @@ class _ProjectDetail extends State<ProjectDetail> {
     return Container(
       // color: Colors.blueGrey,
 
-      margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 50),
+      margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 80),
       child: Column(
         // physics: const NeverScrollableScrollPhysics(),
         // crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
             height: 40,
-            child: TextFormField(
-              autofocus: true,
-              textInputAction: TextInputAction.search,
-              decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(30))), filled: false, hintText: "输入key或翻译内容搜索"),
-              onChanged: (value) {
-                // project.projectName = value;
-              },
-              onFieldSubmitted: (value) {
-                searchTranslation(value);
-              },
+            child: Container(
+              decoration: const BoxDecoration(color: Color(0xFFE0E0E0)),
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  buildDropDown(),
+                  Expanded(
+                    child: TextFormField(
+                      autofocus: true,
+                      textInputAction: TextInputAction.search,
+                      decoration: const InputDecoration(border: InputBorder.none, filled: false, hintText: "输入key或翻译内容搜索"),
+                      onChanged: (value) {
+                        // project.projectName = value;
+                      },
+                      onFieldSubmitted: (value) {
+                        searchTranslation(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           // buildTranslationTable(),
@@ -465,7 +476,8 @@ class _ProjectDetail extends State<ProjectDetail> {
               }
             } else {
               languageContentMapChange.keys.forEach((languageId) {
-                Translation newTranslation = Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                Translation newTranslation =
+                    Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
                 translationList.add(newTranslation);
               });
             }
@@ -811,21 +823,78 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
-  void searchTranslation(String key) {
-    if (key.isNotEmpty) {
+  void searchTranslation(String keyword) {
+    if (keyword.isNotEmpty) {
       translationListShowing.clear();
+      Map<String, Map<int, Translation>?> resultMap = HashMap();
+      List<String> searchResultKey = [];
       originalTranslationList.forEach((element) {
-        var ratioValue = ratio(key, element.translationContent);
-        if (ratioValue > 50) {
+        String? compareString;
+        if (searchLanguageId == null) {
+          compareString = element.translationKey;
+        } else {
+          if (element.languageId == searchLanguageId) {
+            compareString = element.translationContent;
+          }
+        }
+        if (compareString != null) {
+          var ratioValue = ratio(keyword, compareString);
+          if (ratioValue > 50) {
+            searchResultKey.add(element.translationKey);
+          }
+        }
+      });
+      translationListShowing.clear();
+      originalTranslationList.forEach((element){
+        if(searchResultKey.contains(element.translationKey)){
           translationListShowing.add(element);
         }
       });
-    }else{
+
+    } else {
       translationListShowing.clear();
       translationListShowing.addAll(originalTranslationList);
     }
     setState(() {
       rebuildTranslationData();
     });
+  }
+
+  String dropdownValue = 'Key';
+  int? searchLanguageId;
+
+  Widget buildDropDown() {
+    List<String> searchType = [];
+    searchType.add("Key");
+    for (Language language in languageList) {
+      searchType.add(language.languageName);
+    }
+    return DropdownMenu<String>(
+      initialSelection: searchType.first,
+      leadingIcon: const Icon(Icons.search),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: InputBorder.none,
+        filled: true,
+        contentPadding: EdgeInsets.symmetric(vertical: 5.0),
+      ),
+      onSelected: (String? value) {
+        setState(() {
+          if (value == 'Key') {
+            searchLanguageId = null;
+          } else {
+            for (Language language in languageList) {
+              if (language.languageName == value) {
+                searchLanguageId = language.languageId;
+                break;
+              }
+            }
+          }
+          dropdownValue = value!;
+        });
+      },
+      dropdownMenuEntries: searchType.map<DropdownMenuEntry<String>>((String value) {
+        return DropdownMenuEntry<String>(value: value, label: value);
+      }).toList(),
+    );
   }
 }
