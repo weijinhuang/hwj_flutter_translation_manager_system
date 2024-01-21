@@ -71,6 +71,7 @@ class Translation {
 class Project {
   String? projectName;
   String projectId;
+  String? copyFromProject;
 
   Project(this.projectName, this.projectId);
 

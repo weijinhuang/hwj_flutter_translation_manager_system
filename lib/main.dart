@@ -93,11 +93,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return Column(
       children: [
         Container(
-          margin: EdgeInsets.only(top: 50),
+            margin: EdgeInsets.only(top: 50),
             child: Text(
-          "Welcome to LongSe",
-          style: Theme.of(context).textTheme.displayLarge,
-        )),
+              "Welcome to LongSe",
+              style: Theme.of(context).textTheme.displayLarge,
+            )),
         Expanded(
           child: ListView.builder(
             itemBuilder: (context, index) {
@@ -194,7 +194,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _toAddProjectPage() async {
-    Project? project = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AddProjectPage()));
+    Project? project = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddProjectPage(projects)));
     if (null != project) {
       fetchProjects();
     }

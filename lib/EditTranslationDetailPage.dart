@@ -243,9 +243,9 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
     List<Language> languageToTranslate = [];
     String imageRes;
     if (translatePlatform == "google") {
-      imageRes = 'images/google.png';
+      imageRes = 'images/google_color.png';
     } else {
-      imageRes = 'images/baidu.png';
+      imageRes = 'images/baidu_color.png';
     }
     return GestureDetector(
       child: Image.asset(

@@ -3,7 +3,9 @@ import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
 
 class AddProjectPage extends StatefulWidget {
-  const AddProjectPage({Key? key}) : super(key: key);
+  List<Project> projectList;
+
+  AddProjectPage(this.projectList, {super.key});
 
   @override
   State<AddProjectPage> createState() => _AddProjectPageState();
@@ -34,6 +36,12 @@ class _AddProjectPageState extends State<AddProjectPage> {
               onChanged: (value) {
                 project.projectId = value;
               },
+            ),
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.max,
+                children: [Text("从此项目复制："), buildDropDown()],
+              ),
             ),
             Container(
               margin: const EdgeInsets.only(top: 100),
@@ -75,5 +83,30 @@ class _AddProjectPageState extends State<AddProjectPage> {
             });
       }
     });
+  }
+
+  Widget buildDropDown() {
+    List<String> searchType = [];
+    searchType.add("");
+    for (Project project in widget.projectList) {
+      searchType.add(project.projectId);
+    }
+    return DropdownMenu<String>(
+      initialSelection: searchType.first,
+      leadingIcon: const Icon(Icons.copy),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: InputBorder.none,
+        filled: true,
+        contentPadding: EdgeInsets.symmetric(vertical: 5.0),
+      ),
+      onSelected: (String? value) {
+        setState(() {
+          project.copyFromProject = value;
+        });
+      },
+      dropdownMenuEntries: searchType.map<DropdownMenuEntry<String>>((String value) {
+        return DropdownMenuEntry<String>(value: value, label: value);
+      }).toList(),
+    );
   }
 }

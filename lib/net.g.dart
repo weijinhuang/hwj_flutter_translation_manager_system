@@ -86,11 +86,12 @@ Map<String, dynamic> _$TranslationToJson(Translation instance) =>
 Project _$ProjectFromJson(Map<String, dynamic> json) => Project(
       json['projectName'] as String?,
       json['projectId'] as String,
-    );
+    )..copyFromProject = json['copyFromProject'] as String?;
 
 Map<String, dynamic> _$ProjectToJson(Project instance) => <String, dynamic>{
       'projectName': instance.projectName,
       'projectId': instance.projectId,
+      'copyFromProject': instance.copyFromProject,
     };
 
 Language _$LanguageFromJson(Map<String, dynamic> json) => Language(

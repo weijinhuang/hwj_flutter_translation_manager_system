@@ -9,7 +9,7 @@ import 'package:convert/convert.dart';
 class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
-  String ip = "172.16.26.46";
+  String ip = "127.0.0.1";
 
   Future<http.Response> exportTranslationZip(String projectId, String platform) async {
     final response = await http.get(Uri.parse("http://$ip:80/exportTranslation/$projectId/$platform"),
@@ -45,7 +45,7 @@ class WJHttp {
     print("MD5:$md5Str");
     BaiduTranslationParam translationParam = BaiduTranslationParam(sourceContent, from, to, "20231209001905732", salt, md5Str);
     translationParam.sign = md5Str;
-    final response = await http.post(Uri.parse("http://$ip:80/translateByBaidu2"),
+    final response = await http.post(Uri.parse("http://$ip:80/translateByGoogle"),
         headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(translationParam.toJson()));
     print("translateByBaidu${response.body}");
     if (response.statusCode == 200) {
