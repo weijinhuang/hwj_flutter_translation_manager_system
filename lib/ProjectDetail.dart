@@ -8,6 +8,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:hwj_translation_flutter/AddLanguagePage.dart';
 import 'package:hwj_translation_flutter/EditTranslationDetailPage.dart';
+import 'package:hwj_translation_flutter/ExportLanguagePage.dart';
 import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
@@ -147,7 +148,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           backgroundColor: Colors.white,
           iconTheme: const IconThemeData(color: Colors.black),
           title: Text(
-            project.projectName ?? "",
+            project.projectId ?? "",
             style: const TextStyle(color: Colors.black),
           ),
           actions: buildActions(),
@@ -190,30 +191,31 @@ class _ProjectDetail extends State<ProjectDetail> {
     ));
     actions.add(TextButton(
       onPressed: () {
-        List<String> platforms = ["android", "ios", "excel"];
-        showSelectPlatformDialog(platforms, (platForm) {
-          if (null == platForm) {
-            return;
-          }
-          if (platForm == "excel") {
-            exportTranslationExcel();
-          } else {
-            WJHttp().exportTranslationZip(project.projectId, platForm).then((value) {
-              var base64 = base64Encode(value.bodyBytes);
-              var downloadName = "LongVisionFullTranslation.zip";
-              final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
-              anchor.download = downloadName;
-              var body = document.body;
-              if (null != body) {
-                body.append(anchor);
-              }
-              anchor.click();
-              anchor.remove();
-              print("export $platForm end");
-            });
-            return;
-          }
-        });
+        toExportPage();
+        // List<String> platforms = ["android", "ios", "excel"];
+        // showSelectPlatformDialog(platforms, (platForm) {
+        //   if (null == platForm) {
+        //     return;
+        //   }
+        //   if (platForm == "excel") {
+        //     exportTranslationExcel();
+        //   } else {
+        //     WJHttp().exportTranslationZip(project.projectId, platForm).then((value) {
+        //       var base64 = base64Encode(value.bodyBytes);
+        //       var downloadName = "LongVisionFullTranslation.zip";
+        //       final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
+        //       anchor.download = downloadName;
+        //       var body = document.body;
+        //       if (null != body) {
+        //         body.append(anchor);
+        //       }
+        //       anchor.click();
+        //       anchor.remove();
+        //       print("export $platForm end");
+        //     });
+        //     return;
+        //   }
+        // });
       },
       child: const Text("导出"),
     ));
@@ -633,6 +635,13 @@ class _ProjectDetail extends State<ProjectDetail> {
     bool refresh = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => TranslationComparePage(translationList)));
     if (refresh) {
       fetchTranslation();
+    }
+  }
+
+  void toExportPage() async {
+    List<Language>? newLangList = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => ExportLanguagePage(project)));
+    if (newLangList != null && newLangList.isNotEmpty) {
+      // addLanguageRemote(newLangList);
     }
   }
 

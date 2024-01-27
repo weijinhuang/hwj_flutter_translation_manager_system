@@ -142,11 +142,8 @@ class BaiduTranslationResult {
 
   factory BaiduTranslationResult.fromJson(Map<String, dynamic> json) => _$BaiduTranslationResultFromJson(json);
 
-
-
   Map<String, dynamic> toJson() => _$BaiduTranslationResultToJson(this);
 }
-
 
 @JsonSerializable()
 class ThirdPartyTranslationResult {
@@ -159,9 +156,9 @@ class ThirdPartyTranslationResult {
 
   factory ThirdPartyTranslationResult.fromJson(Map<String, dynamic> json) => _$ThirdPartyTranslationResultFromJson(json);
 
-
   Map<String, dynamic> toJson() => _$ThirdPartyTranslationResultToJson(this);
 }
+
 @JsonSerializable()
 class GoogleTranslationParam {
   String? sourceLanguage;
@@ -172,11 +169,8 @@ class GoogleTranslationParam {
 
   factory GoogleTranslationParam.fromJson(Map<String, dynamic> json) => _$GoogleTranslationParamFromJson(json);
 
-
   Map<String, dynamic> toJson() => _$GoogleTranslationParamToJson(this);
 }
-
-
 
 @JsonSerializable()
 class BaiduTranslation {
@@ -189,4 +183,17 @@ class BaiduTranslation {
   factory BaiduTranslation.fromJson(Map<String, dynamic> json) => _$BaiduTranslationFromJson(json);
 
   Map<String, dynamic> toJson() => _$BaiduTranslationToJson(this);
+}
+
+@JsonSerializable()
+class ExportTranslationParam {
+  List<String>? projectIdList;
+
+  String? platform;
+
+  ExportTranslationParam();
+
+  factory ExportTranslationParam.fromJson(Map<String, dynamic> json) => _$ExportTranslationParamFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ExportTranslationParamToJson(this);
 }

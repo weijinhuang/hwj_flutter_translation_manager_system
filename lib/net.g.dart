@@ -209,3 +209,18 @@ Map<String, dynamic> _$BaiduTranslationToJson(BaiduTranslation instance) =>
       'src': instance.src,
       'dst': instance.dst,
     };
+
+ExportTranslationParam _$ExportTranslationParamFromJson(
+        Map<String, dynamic> json) =>
+    ExportTranslationParam()
+      ..projectIdList = (json['projectIdList'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList()
+      ..platform = json['platform'] as String?;
+
+Map<String, dynamic> _$ExportTranslationParamToJson(
+        ExportTranslationParam instance) =>
+    <String, dynamic>{
+      'projectIdList': instance.projectIdList,
+      'platform': instance.platform,
+    };

@@ -37,10 +37,12 @@ class _AddProjectPageState extends State<AddProjectPage> {
                 project.projectId = value;
               },
             ),
-            Center(
+            Container(
+              margin: const EdgeInsets.only(top: 10),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
-                children: [Text("从此项目复制："), buildDropDown()],
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [Text("复制："), Expanded(child: buildDropDown())],
               ),
             ),
             Container(
@@ -87,12 +89,11 @@ class _AddProjectPageState extends State<AddProjectPage> {
 
   Widget buildDropDown() {
     List<String> searchType = [];
-    searchType.add("");
     for (Project project in widget.projectList) {
       searchType.add(project.projectId);
     }
     return DropdownMenu<String>(
-      initialSelection: searchType.first,
+      hintText: "请选择项目",
       leadingIcon: const Icon(Icons.copy),
       inputDecorationTheme: const InputDecorationTheme(
         border: InputBorder.none,

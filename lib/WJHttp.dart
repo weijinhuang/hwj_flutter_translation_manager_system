@@ -9,7 +9,15 @@ import 'package:convert/convert.dart';
 class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
-  String ip = "127.0.0.1";
+  String ip = "172.16.26.46";
+
+
+  Future<http.Response> exportTranslationZip2(ExportTranslationParam exportTranslationParam) async {
+    final response = await http.post(Uri.parse("http://$ip:80/exportTranslation2"),
+        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'},
+        body: jsonEncode(exportTranslationParam.toJson()));
+    return response;
+  }
 
   Future<http.Response> exportTranslationZip(String projectId, String platform) async {
     final response = await http.get(Uri.parse("http://$ip:80/exportTranslation/$projectId/$platform"),
