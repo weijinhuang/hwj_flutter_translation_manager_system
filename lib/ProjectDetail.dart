@@ -97,21 +97,21 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void rebuildTranslationData() {
     // if (translationListShowing.isNotEmpty) {
-      translationRootMap.clear();
-      for (var element in translationListShowing) {
-        Map<String, Map<int, Translation>>? keyLanguageTranslationMap = translationRootMap[element.moduleId];
-        if (keyLanguageTranslationMap == null) {
-          keyLanguageTranslationMap = HashMap();
-          translationRootMap[element.moduleId ?? -1] = keyLanguageTranslationMap;
-        }
-
-        Map<int, Translation>? languageTranslationMap = keyLanguageTranslationMap[element.translationKey];
-        if (null == languageTranslationMap) {
-          languageTranslationMap = HashMap();
-          keyLanguageTranslationMap[element.translationKey] = languageTranslationMap;
-        }
-        languageTranslationMap[element.languageId] = element;
+    translationRootMap.clear();
+    for (var element in translationListShowing) {
+      Map<String, Map<int, Translation>>? keyLanguageTranslationMap = translationRootMap[element.moduleId];
+      if (keyLanguageTranslationMap == null) {
+        keyLanguageTranslationMap = HashMap();
+        translationRootMap[element.moduleId ?? -1] = keyLanguageTranslationMap;
       }
+
+      Map<int, Translation>? languageTranslationMap = keyLanguageTranslationMap[element.translationKey];
+      if (null == languageTranslationMap) {
+        languageTranslationMap = HashMap();
+        keyLanguageTranslationMap[element.translationKey] = languageTranslationMap;
+      }
+      languageTranslationMap[element.languageId] = element;
+    }
     // }
   }
 
@@ -149,7 +149,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           iconTheme: const IconThemeData(color: Colors.black),
           title: Text(
             project.projectId ?? "",
-            style: const TextStyle(color: Colors.black),
+            style: Theme.of(context).textTheme.displayLarge,
           ),
           actions: buildActions(),
         ),
@@ -639,7 +639,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   void toExportPage() async {
-    List<Language>? newLangList = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => ExportLanguagePage(project)));
+    List<Language>? newLangList = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => ExportLanguagePage(project, languageList, modules, translationRootMap)));
     if (newLangList != null && newLangList.isNotEmpty) {
       // addLanguageRemote(newLangList);
     }
@@ -854,12 +854,11 @@ class _ProjectDetail extends State<ProjectDetail> {
         }
       });
       translationListShowing.clear();
-      originalTranslationList.forEach((element){
-        if(searchResultKey.contains(element.translationKey)){
+      originalTranslationList.forEach((element) {
+        if (searchResultKey.contains(element.translationKey)) {
           translationListShowing.add(element);
         }
       });
-
     } else {
       translationListShowing.clear();
       translationListShowing.addAll(originalTranslationList);
