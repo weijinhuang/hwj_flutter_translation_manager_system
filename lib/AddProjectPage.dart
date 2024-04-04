@@ -66,7 +66,7 @@ class _AddProjectPageState extends State<AddProjectPage> {
 
   void _saveProjectToServer() {
     print("_saveProjectToServer");
-    WJHttp().addProject(project).then((value) {
+    WJHttp().addProjectV2(project).then((value) {
       if (value.code == 200) {
         print("success");
         Navigator.pop(context, project);

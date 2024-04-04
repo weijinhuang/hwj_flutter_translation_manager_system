@@ -9,6 +9,24 @@ part 'net.g.dart';
     flutter pub run build_runner build --delete-conflicting-outputs
  * */
 
+class CommonParam<DATA> {
+  String cmd;
+  Object? data;
+
+  CommonParam(this.cmd, {this.data});
+
+  Map<String, dynamic> toJson() => _$CommonParamToJson(this, data);
+}
+
+Map<String, dynamic> _$CommonParamToJson<DATA>(
+  CommonParam<DATA> instance,
+  Object? data,
+) =>
+    <String, dynamic>{
+      'cmd': instance.cmd,
+      'data': data,
+    };
+
 @JsonSerializable(genericArgumentFactories: true)
 class CommonResponse<DATA> {
   int code;

@@ -9,273 +9,151 @@ import 'package:convert/convert.dart';
 class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
-  String ip = "172.16.26.46";
+  // String ip = "172.16.26.46";
+  String ip = "127.0.0.1";
 
-
-  Future<http.Response> exportTranslationZip2(ExportTranslationParam exportTranslationParam) async {
-    final response = await http.post(Uri.parse("http://$ip:80/exportTranslation2"),
-        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'},
-        body: jsonEncode(exportTranslationParam.toJson()));
-    return response;
-  }
-
-  Future<http.Response> exportTranslationZip(String projectId, String platform) async {
-    final response = await http.get(Uri.parse("http://$ip:80/exportTranslation/$projectId/$platform"),
-        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/octet-stream', 'Accept': '*/*'});
-    return response;
-  }
-
-  Future<CommonResponse<ThirdPartyTranslationResult?>> translateByGoogle(String sourceContent, String sourceLanguage, String targetLanguage) async {
-    GoogleTranslationParam translationParam = GoogleTranslationParam(sourceLanguage, targetLanguage, sourceContent);
-
-    final response = await http.post(Uri.parse("http://$ip:80/translateByGoogle"),
-        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(translationParam.toJson()));
-    print("translateByGoogle${response.body}");
+  Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
+    var dataJson = param.toJson();
+    print("Request:$dataJson");
+    final response = await http.post(Uri.parse("http://$ip:80/translationSystem"), headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(dataJson));
+    print("response:${param.cmd}:${response.body}");
     if (response.statusCode == 200) {
-      return CommonResponse<ThirdPartyTranslationResult?>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
-        if (json != null) {
-          return ThirdPartyTranslationResult.fromJson(json);
-        } else {
-          return null;
-        }
-      });
-    } else {
-      return CommonResponse(-1, "", null);
-    }
-  }
-
-  Future<CommonResponse<ThirdPartyTranslationResult?>> translateByBaidu(String sourceContent, String from, String to) async {
-    var salt = Random().nextInt(100000).toString();
-    var str = "20231209001905732$sourceContent$salt$baiduScreat";
-
-    var content = Utf8Encoder().convert(str);
-    var md5Str = hex.encode(md5.convert(content).bytes);
-    print("MD5:$md5Str");
-    BaiduTranslationParam translationParam = BaiduTranslationParam(sourceContent, from, to, "20231209001905732", salt, md5Str);
-    translationParam.sign = md5Str;
-    final response = await http.post(Uri.parse("http://$ip:80/translateByGoogle"),
-        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(translationParam.toJson()));
-    print("translateByBaidu${response.body}");
-    if (response.statusCode == 200) {
-      return CommonResponse<ThirdPartyTranslationResult?>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
-        if (json != null) {
-          return ThirdPartyTranslationResult.fromJson(json);
-        } else {
-          return null;
-        }
-      });
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception("net error");
     }
   }
 
-  Future<CommonListResponse<Translation>> fetchTranslation(String projectId, {int? moduleId}) async {
+  Future<CommonListResponse<Project>?> fetchProjectsV2() async {
+    CommonParam commonParam = CommonParam("getAllProjects");
+    return sendRequest(commonParam).then((value) => CommonListResponse.fromJson(value, (json) => Project.fromJson(json)));
+  }
+
+  Future<CommonResponse<ThirdPartyTranslationResult?>> translateByGoogleV2(String sourceContent, String sourceLanguage, String targetLanguage) async {
+    GoogleTranslationParam translationParam = GoogleTranslationParam(sourceLanguage, targetLanguage, sourceContent);
+    CommonParam commonParam = CommonParam("translateByGoogle", data: translationParam.toJson());
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) {
+        if (null != json) {
+          return ThirdPartyTranslationResult.fromJson(json);
+        } else {
+          return null;
+        }
+      });
+    });
+  }
+
+  Future<http.Response> exportTranslationZip2(ExportTranslationParam exportTranslationParam) async {
+    final response = await http.post(Uri.parse("http://$ip:80/exportTranslation2"), headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(exportTranslationParam.toJson()));
+    return response;
+  }
+
+  Future<http.Response> exportTranslationZip(String projectId, String platform) async {
+    final response = await http.get(Uri.parse("http://$ip:80/exportTranslation/$projectId/$platform"), headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/octet-stream', 'Accept': '*/*'});
+    return response;
+  }
+
+  Future<CommonResponse<ThirdPartyTranslationResult?>> translateByBaiduV2(String sourceContent, String from, String to) async {
+    var salt = Random().nextInt(100000).toString();
+    var str = "20231209001905732$sourceContent$salt$baiduScreat";
+    var content = Utf8Encoder().convert(str);
+    var md5Str = hex.encode(md5.convert(content).bytes);
+    print("MD5:$md5Str");
+    BaiduTranslationParam translationParam = BaiduTranslationParam(sourceContent, from, to, "20231209001905732", salt, md5Str);
+    translationParam.sign = md5Str;
+
+    CommonParam commonParam = CommonParam("translateByBaidu", data: translationParam.toJson());
+
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) => ThirdPartyTranslationResult.fromJson(json));
+    });
+  }
+
+  Future<CommonResponse<void>> deleteTranslationByKeyV2(String translationKey, String projectId) async {
+    print("删除翻译");
+    var params = {"translationKey": translationKey, "projectId": projectId};
+    CommonParam commonParam = CommonParam("deleteTranslationByKey", data: params);
+    return sendRequest(commonParam).then((value) => CommonResponse.fromJson(value, (json) {}));
+  }
+
+  Future<CommonListResponse<Language>> fetchLanguageListV2(String projectId) async {
+    Map<String, String> params = {'projectId': projectId};
+
+    CommonParam commonParam = CommonParam("getLanguageList", data: params);
+    return sendRequest(commonParam).then((value) => CommonListResponse.fromJson(value, (json) => Language.fromJson(json)));
+  }
+
+  Future<CommonListResponse<Translation>> fetchTranslationV2(String projectId, {int? moduleId}) async {
     Map<String, dynamic> params;
     if (moduleId == null) {
       params = {'projectId': projectId};
     } else {
       params = {'projectId': projectId, 'moduleId': moduleId};
     }
-    final response = await http.post(Uri.parse("http://$ip:80/getAllTranslation"),
-        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(params));
-    // print("拉取翻译列表${response.body}");
-    if (response.statusCode == 200) {
-      return CommonListResponse<Translation>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Translation.fromJson(json));
-    } else {
-      throw Exception("net error");
-    }
+    CommonParam commonParam = CommonParam("getAllTranslation", data: params);
+    return sendRequest(commonParam).then((value) => CommonListResponse.fromJson(value, (json) => Translation.fromJson(json)));
   }
 
-  Future<CommonListResponse<Project>> fetchProjects() async {
-    final response = await http.get(Uri.parse("http://$ip:80/getAllProjects"));
-    print(response.body);
-    if (response.statusCode == 200) {
-      return CommonListResponse<Project>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Project.fromJson(json));
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonResponse<void>> addProjectV2(Project project) async {
+    CommonParam commonParam = CommonParam("addProject", data: project.toJson());
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) {});
+    });
   }
 
-  Future<CommonResponse<void>> addProject(Project project) async {
-    print("addProject");
-    final response = await http.post(Uri.parse("http://$ip:80/addProject"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(project.toJson()));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonResponse<void>> deleteProjectV2(Project project) async {
+    CommonParam commonParam = CommonParam("deleteProject", data: project.toJson());
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) {});
+    });
   }
 
-  Future<CommonResponse<void>> deleteProject(Project project) async {
-    print("deleteProject");
-    final response = await http.post(Uri.parse("http://$ip:80/deleteProject"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(project.toJson()));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
+
+  Future<CommonResponse<void>> addModuleV2(Module module) async {
+    CommonParam commonParam = CommonParam("addModule", data: module.toJson());
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) {});
+    });
   }
 
-  Future<CommonResponse<void>> addLanguage(Language language) async {
-    print("addLanguage");
-    final response = await http.post(Uri.parse("http://$ip:80/addLanguage"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(language.toJson()));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonResponse<void>> deleteLanguageV2(Language language) async {
+    CommonParam commonParam = CommonParam("deleteLanguage", data: language.toJson());
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) {});
+    });
   }
 
-  Future<CommonListResponse<Language>> addLanguages(List<Language> translation) async {
-    String json = jsonEncode(translation.map((e) => e.toJson()).toList(growable: false));
-    print("添加语言列表:$json");
-    final response = await http.post(Uri.parse("http://$ip:80/addLanguages"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: json);
-    if (response.statusCode == 200) {
-      return CommonListResponse<Language>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
-        return Language.fromJson(json);
-      });
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonResponse<void>> deleteModuleV2(Module module) async {
+    CommonParam commonParam = CommonParam("deleteModule", data: module.toJson());
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) {});
+    });
   }
 
-  Future<CommonResponse<void>> addModule(Module module) async {
-    print("addLanguage");
-    final response = await http.post(Uri.parse("http://$ip:80/addModule"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(module.toJson()));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonListResponse<Module>> fetchModuleListV2(String projectId) async {
+    CommonParam commonParam = CommonParam("getAllModules", data: projectId);
+    return sendRequest(commonParam).then((value) {
+      return CommonListResponse<Module>.fromJson(value, (json) => Module.fromJson(json));
+    });
   }
 
-  Future<CommonResponse<void>> deleteLanguage(Language language) async {
-    print("deleteLanguage");
-    final response = await http.post(Uri.parse("http://$ip:80/deleteLanguage"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(language.toJson()));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonListResponse<Language>> addLanguagesV2(List<Language> translation) async {
+    var json = translation.map((e) => e.toJson()).toList(growable: false);
+    CommonParam commonParam = CommonParam("addLanguages", data: json);
+    return sendRequest(commonParam).then((value) => CommonListResponse<Language>.fromJson(value, (json) {
+      return Language.fromJson(json);
+    }));
   }
 
-  Future<CommonResponse<void>> deleteModule(Module module) async {
-    print("deleteModule");
-    final response = await http.post(Uri.parse("http://$ip:80/deleteModule"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(module.toJson()));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonListResponse<Translation>> addTranslationsV2(List<Translation> translation) async {
+    var json = translation.map((e) => e.toJson()).toList(growable: false);
+    CommonParam commonParam = CommonParam("addTranslations", data: json);
+    return sendRequest(commonParam).then((value) => CommonListResponse<Translation>.fromJson(value, (json) => Translation.fromJson(json)));
   }
 
-  Future<CommonListResponse<Language>> fetchLanguageList(String projectId) async {
-    final response = await http.get(Uri.parse("http://$ip:80/getLanguageList/$projectId"));
-    print("查询语言列表${response.body}");
-    if (response.statusCode == 200) {
-      return CommonListResponse<Language>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Language.fromJson(json));
-    } else {
-      throw Exception("net error");
-    }
-  }
-
-  Future<CommonListResponse<Module>> fetchModuleList(String projectId) async {
-    final response = await http.get(Uri.parse("http://$ip:80/getAllModules/$projectId"));
-    print("查询Module列表${response.body}");
-    if (response.statusCode == 200) {
-      return CommonListResponse<Module>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) => Module.fromJson(json));
-    } else {
-      throw Exception("net error");
-    }
-  }
-
-  Future<CommonResponse<void>> addTranslation(Translation translation) async {
-    print("添加翻译");
-    final response = await http.post(Uri.parse("http://$ip:80/addTranslation"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(translation.toJson()));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
-  }
-
-  Future<CommonListResponse<Translation>> addTranslations(List<Translation> translation) async {
-    String json = jsonEncode(translation.map((e) => e.toJson()).toList(growable: false));
-    print("添加翻译列表:$json");
-    final response = await http.post(Uri.parse("http://$ip:80/addTranslations"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: json);
-    if (response.statusCode == 200) {
-      return CommonListResponse<Translation>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
-        return Translation.fromJson(json);
-      });
-    } else {
-      throw Exception("net error");
-    }
-  }
-
-  Future<CommonListResponse<Translation>> updateTranslations(List<Translation> translation) async {
-    String json = jsonEncode(translation.map((e) => e.toJson()).toList(growable: false));
-    print("添加翻译列表:$json");
-    final response = await http.post(Uri.parse("http://$ip:80/updateTranslations"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: json);
-    if (response.statusCode == 200) {
-      return CommonListResponse<Translation>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {
-        return Translation.fromJson(json);
-      });
-    } else {
-      throw Exception("net error");
-    }
-  }
-
-  Future<CommonResponse<void>> deleteTranslationByKey(String translationKey, String projectId) async {
-    print("删除翻译");
-    final response = await http.post(Uri.parse("http://$ip:80/deleteTranslationByKey"),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({"translationKey": translationKey, "projectId": projectId}));
-    if (response.statusCode == 200) {
-      return CommonResponse<void>.fromJson(jsonDecode(utf8.decode(response.bodyBytes)), (json) {});
-    } else {
-      throw Exception("net error");
-    }
+  Future<CommonListResponse<Translation>> updateTranslationsV2(List<Translation> translation) async {
+    var json = translation.map((e) => e.toJson()).toList(growable: false);
+    CommonParam commonParam = CommonParam("updateTranslations", data: json);
+    return sendRequest(commonParam).then((value) => CommonListResponse<Translation>.fromJson(value, (json) => Translation.fromJson(json)));
   }
 }

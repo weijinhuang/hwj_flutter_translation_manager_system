@@ -179,7 +179,7 @@ class _TranslationComparePage extends State<TranslationComparePage> {
         return;
       }
     }
-    WJHttp().addTranslations(translationList).then((value) {
+    WJHttp().addTranslationsV2(translationList).then((value) {
       if (value.code == 200) {
         print("添加翻译成功");
         print("Navigator.of(context).pop();");

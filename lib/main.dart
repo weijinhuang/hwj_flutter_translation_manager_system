@@ -56,11 +56,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void fetchProjects() {
-    WJHttp().fetchProjects().then((projectsResult) {
-      setState(() {
-        projects.clear();
-        projects.addAll(projectsResult.data);
-      });
+    WJHttp().fetchProjectsV2().then((projectsResult) {
+      if (projectsResult != null) {
+        if (projectsResult.code == 200) {
+          setState(() {
+            projects.clear();
+            projects.addAll(projectsResult.data);
+          });
+        }
+      }
     });
   }
 
@@ -192,7 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void deleteProjectRemote(Project project) {
-    WJHttp().deleteProject(project).then((value) {
+    WJHttp().deleteProjectV2(project).then((value) {
       fetchProjects();
     });
   }

@@ -209,7 +209,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
       setState(() {
         loadingLanguageName = to.languageName;
       });
-      WJHttp().translateByGoogle(src, defaultFrom, to.languageName).then((value) {
+      WJHttp().translateByGoogleV2(src, defaultFrom, to.languageName).then((value) {
         if (value.code == 200) {
           String? translationResult = value.data?.transResult;
           if (translationResult != null) {
@@ -227,7 +227,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
       setState(() {
         loadingLanguageName = to.languageName;
       });
-      WJHttp().translateByBaidu(src, defaultFrom, to.languageName).then((value) {
+      WJHttp().translateByBaiduV2(src, defaultFrom, to.languageName).then((value) {
         if (value.code == 200) {
           String? translationResult = value.data?.transResult;
           if (translationResult != null) {
@@ -243,9 +243,9 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
     List<Language> languageToTranslate = [];
     String imageRes;
     if (translatePlatform == "google") {
-      imageRes = 'images/google.png';
+      imageRes = 'images/google_color.png';
     } else {
-      imageRes = 'images/baidu.png';
+      imageRes = 'images/baidu_color.png';
     }
     return GestureDetector(
       child: Image.asset(

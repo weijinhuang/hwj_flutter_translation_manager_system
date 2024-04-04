@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:hwj_translation_flutter/AddLanguagePage.dart';
 import 'package:hwj_translation_flutter/EditTranslationDetailPage.dart';
 import 'package:hwj_translation_flutter/ExportLanguagePage.dart';
+import 'package:hwj_translation_flutter/MergeProjectSelectProjectPage.dart';
 import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
@@ -65,13 +66,13 @@ class _ProjectDetail extends State<ProjectDetail> {
     translationRootMap.clear();
     translationListShowing.clear();
     WJHttp http = WJHttp();
-    http.fetchModuleList(project.projectId).then((moduleListWrapper) {
+    http.fetchModuleListV2(project.projectId).then((moduleListWrapper) {
       if (moduleListWrapper.code == 200) {
         modules = moduleListWrapper.data;
         if (modules.isNotEmpty) {
           Module currentSelectedModule = modules[0];
           mCurrentSelectedModule = currentSelectedModule;
-          http.fetchLanguageList(project.projectId).then((languageListWrapper) {
+          http.fetchLanguageListV2(project.projectId).then((languageListWrapper) {
             if (languageListWrapper.code == 200) {
               languageList = languageListWrapper.data;
               languageList.sort((a, b) {
@@ -81,7 +82,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                   return 1;
                 }
               });
-              http.fetchTranslation(project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? -1).then((translationListWrapper) {
+              http.fetchTranslationV2(project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? -1).then((translationListWrapper) {
                 originalTranslationList = translationListWrapper.data;
                 translationListShowing.addAll(originalTranslationList);
                 setState(() {
@@ -219,6 +220,11 @@ class _ProjectDetail extends State<ProjectDetail> {
       },
       child: const Text("导出"),
     ));
+    actions.add(TextButton(
+        onPressed: () {
+          toMergeTranslationPage();
+        },
+        child: const Text("合并相似项")));
     return actions;
   }
 
@@ -478,8 +484,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               }
             } else {
               languageContentMapChange.keys.forEach((languageId) {
-                Translation newTranslation =
-                    Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                Translation newTranslation = Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
                 translationList.add(newTranslation);
               });
             }
@@ -625,9 +630,9 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
 
     if (add) {
-      WJHttp().addTranslations(translationList).then(onValue);
+      WJHttp().addTranslationsV2(translationList).then(onValue);
     } else {
-      WJHttp().updateTranslations(translationList).then(onValue);
+      WJHttp().updateTranslationsV2(translationList).then(onValue);
     }
   }
 
@@ -645,6 +650,18 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
+  void toMergeTranslationPage() async {
+    List<Language> showLanguageList = [];
+    int count = 0;
+    languageList.forEach((element) {
+      if(count < 2){
+        showLanguageList.add(element);
+        count++;
+      }
+    });
+    Navigator.of(context).push(MaterialPageRoute(builder: (content) => MergeProjectSelectProjectPage(translationRootMap.values.first,showLanguageList)));
+  }
+
   void toAddLanguagePage() async {
     List<Language>? newLangList = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddLanguagePage(project, languageList)));
     if (newLangList != null && newLangList.isNotEmpty) {
@@ -653,7 +670,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   void addLanguageRemote(List<Language> languageList) {
-    WJHttp().addLanguages(languageList).then((value) {
+    WJHttp().addLanguagesV2(languageList).then((value) {
       fetchTranslation();
       if (value.data.isNotEmpty) {
         var errorTipsBuffer = StringBuffer();
@@ -668,7 +685,7 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   void deleteLanguageRemote(Language language) {
     print("deleteLanguageRemote");
-    WJHttp().deleteLanguage(language).then((value) {
+    WJHttp().deleteLanguageV2(language).then((value) {
       if (value.code == 200) {
         languageList.remove(language);
       }
@@ -677,7 +694,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   void deleteTranslationRemote(String translationKey) {
-    WJHttp().deleteTranslationByKey(translationKey, project.projectId).then((value) {
+    WJHttp().deleteTranslationByKeyV2(translationKey, project.projectId).then((value) {
       if (value.code == 200) {
         int? moduleId = mCurrentSelectedModule?.moduleId;
         if (null != moduleId) {
@@ -692,7 +709,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   void updateTranslation(Set<Translation> translationSet) {
-    WJHttp().addTranslations(translationSet.toList(growable: false)).then((value) {
+    WJHttp().addTranslationsV2(translationSet.toList(growable: false)).then((value) {
       if (value.code == 200) {
         print("更新翻译成功");
       } else {

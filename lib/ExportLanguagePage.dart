@@ -32,12 +32,14 @@ class _ExportLanguagePageState extends State<ExportLanguagePage> {
   }
 
   void fetchProjects() {
-    WJHttp().fetchProjects().then((projectsResult) {
+    WJHttp().fetchProjectsV2().then((projectsResult) {
       setState(() {
-        projectList.clear();
-        for (var element in projectsResult.data) {
-          if (element.projectId != mainProject.projectId) {
-            projectList.add(element);
+        if(null != projectsResult){
+          projectList.clear();
+          for (var element in projectsResult.data) {
+            if (element.projectId != mainProject.projectId) {
+              projectList.add(element);
+            }
           }
         }
       });
