@@ -69,7 +69,7 @@ class Translation {
   String translationContent;
   String projectId;
   int? moduleId;
-  bool? forceAdd = true;
+  bool? forceAdd = false;
   String? oldTranslationContent;
   String? selectedTranslationContent;
 

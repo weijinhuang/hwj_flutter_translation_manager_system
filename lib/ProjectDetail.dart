@@ -474,7 +474,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 if (null != changeContent) {
                   if (null != translation) {
                     translation.translationContent = changeContent;
-                    translation.forceAdd = true;
+                    translation.forceAdd = false;
                   } else {
                     translation = Translation(translationKey, language.languageId ?? 0, changeContent, project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
                     localTranslationKeyLanguageMap[language.languageId ?? 0] = translation;

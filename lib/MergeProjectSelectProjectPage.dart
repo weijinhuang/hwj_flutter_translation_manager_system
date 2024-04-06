@@ -1,5 +1,5 @@
 import 'dart:collection';
-
+import 'MergeTranslationPage.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hwj_translation_flutter/net.dart';
@@ -19,6 +19,7 @@ class MergeProjectSelectProjectPage extends StatefulWidget {
 class _MergeProjectSelectProjectPage extends State<MergeProjectSelectProjectPage> {
   List<String> selectedTranslationKey = [];
   Map<String, Map<int, Translation>> similarTranslationList = HashMap();
+  Map<String, Map<int, Translation>> currentSourceTranslation = HashMap();
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +29,24 @@ class _MergeProjectSelectProjectPage extends State<MergeProjectSelectProjectPage
           "合并翻译",
           style: TextStyle(color: Colors.white, fontSize: 18),
         ),
+        actions: [
+          GestureDetector(
+            onTap: () async {
+              var result = await showDialog(
+                  barrierDismissible: true,
+                  context: context,
+                  builder: (context) {
+                    return buildMergeTranslationDialog();
+                  });
+
+              mergeRemote(result);
+            },
+            child: Container(
+              margin: const EdgeInsets.only(left: 10, right: 20),
+              child: const Icon(Icons.call_merge),
+            ),
+          )
+        ],
       ),
       body: Center(
         child: Row(
@@ -36,6 +55,29 @@ class _MergeProjectSelectProjectPage extends State<MergeProjectSelectProjectPage
             buildRightTranslationList(),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildMergeTranslationDialog() {
+    Map<String, Map<int, Translation>> map = HashMap();
+    map.addAll(currentSourceTranslation);
+    for (var key in similarTranslationList.keys) {
+      if (selectedTranslationKey.contains(key)) {
+        var similarTranslation = similarTranslationList[key];
+        if (similarTranslation != null) {
+          map[key] = similarTranslation;
+        }
+      }
+    }
+    return AlertDialog(
+      elevation: 10,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: Text("选择主翻译,其他翻译将会被删除"),
+      content: SizedBox(
+        width: 1000,
+        child: MergeTranslationPage(map, widget.languageList),
       ),
     );
   }
@@ -87,6 +129,7 @@ class _MergeProjectSelectProjectPage extends State<MergeProjectSelectProjectPage
               if (left) {
                 selectedTranslationKey.clear();
                 selectedTranslationKey.add(translationKey);
+                currentSourceTranslation = {translationKey: languageTranslationMap};
                 setState(() {
                   searchSimilarTranslation(language, translationKey, translationContent);
                 });
@@ -149,6 +192,12 @@ class _MergeProjectSelectProjectPage extends State<MergeProjectSelectProjectPage
           }
         }
       }
+    });
+  }
+
+  void mergeRemote(resultKey) {
+    currentSourceTranslation.values.forEach((element) {
+
     });
   }
 }
