@@ -110,7 +110,7 @@ class ImportTranslationToolkit {
                 if (null != languageStr) {
                   var languageNameSplit = languageStr.split("(");
                   var languageName = languageNameSplit[0];
-                  var languageDes = languageNameSplit[1];
+                  var languageDes = languageNameSplit[1].replaceAll(")", "");
                   Language language = Language(languageName, languageDes, projectId);
                   excelLanguageList.add(language);
                 }

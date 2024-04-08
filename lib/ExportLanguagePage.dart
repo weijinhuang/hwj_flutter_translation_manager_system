@@ -5,7 +5,6 @@ import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
 import 'dart:convert';
 import 'dart:html';
-import 'package:excel/excel.dart';
 
 class ExportLanguagePage extends StatefulWidget {
   Project project;
@@ -104,7 +103,7 @@ class _ExportLanguagePageState extends State<ExportLanguagePage> {
               ),
             ),
             const Text("合并其他项目导出（可选）",),
-            const Text("以主项目的语言为基准，主项目没有的语言翻译不会合并,excel暂不支持合并导出"),
+            const Text("以主项目的语言为基准，主项目没有的语言翻译不会合并"),
             Expanded(
               child: ListView.builder(
                   itemCount: projectList.length,
@@ -118,11 +117,11 @@ class _ExportLanguagePageState extends State<ExportLanguagePage> {
               decoration: const BoxDecoration(color: Colors.blueAccent, borderRadius: BorderRadius.all(Radius.circular(30))),
               child: TextButton(
                   onPressed: () {
-                    if(selectedPlatform == "excel"){
-                      exportTranslationExcel();
-                    }else {
+                    // if(selectedPlatform == "excel"){
+                    //   exportTranslationExcel();
+                    // }else {
                       exportTranslationRemote();
-                    }
+                    // }
                   },
                   child: const Text(
                     "确认",
@@ -133,59 +132,6 @@ class _ExportLanguagePageState extends State<ExportLanguagePage> {
         ),
       ),
     );
-  }
-
-  void exportTranslationExcel() {
-    print("exportTranslationExcel");
-    Excel excel = Excel.createExcel();
-    String? defaultSheet = excel.getDefaultSheet();
-    List<CellValue> titleRow = List.empty(growable: true);
-    titleRow.add(const TextCellValue("Key"));
-    for (int i = 0; i < widget.languageList.length; i++) {
-      Language language = widget.languageList[i];
-      CellValue cellValue = TextCellValue("${language.languageName}(${language.languageDes})");
-      titleRow.add(cellValue);
-    }
-    excel.appendRow(defaultSheet ?? "Sheet1", titleRow);
-
-    for (Module module in widget.modules) {
-      Map<String, Map<int, Translation>>? translationListInModule = widget.translationRootMap[module.moduleId];
-      if (null != translationListInModule) {
-        var keys = translationListInModule.keys;
-        for (String key in keys) {
-          Map<int, Translation>? translationLanguageContentMap = translationListInModule[key];
-          if (translationLanguageContentMap != null) {
-            List<CellValue> contentRow = List.empty(growable: true);
-            contentRow.add(TextCellValue(key));
-            for (int i = 0; i < widget.languageList.length; i++) {
-              Language language = widget.languageList[i];
-              Translation? translation = translationLanguageContentMap[language.languageId];
-              if (translation != null) {
-                contentRow.add(TextCellValue(translation.translationContent));
-              }
-            }
-            excel.appendRow(defaultSheet ?? "Sheet1", contentRow);
-          }
-        }
-      }
-    }
-
-    var encode = excel.encode();
-    if (null != encode) {
-      var base64 = base64Encode(encode);
-      var downloadName = "LongVisionFullTranslation.xlsx";
-
-      final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
-
-      anchor.download = downloadName;
-      var body = document.body;
-      if (null != body) {
-        body.append(anchor);
-      }
-      anchor.click();
-      anchor.remove();
-      print("exportTranslationExcel end");
-    }
   }
 
   void exportTranslationRemote() {
@@ -199,7 +145,10 @@ class _ExportLanguagePageState extends State<ExportLanguagePage> {
 
     WJHttp().exportTranslationZip2(exportTranslationParam).then((value) {
       var base64 = base64Encode(value.bodyBytes);
-      var downloadName = "LongVisionFullTranslation.zip";
+      var downloadName = "${mainProject.projectId}.zip";
+      if(exportTranslationParam.platform == "excel"){
+        downloadName = "${mainProject.projectId}.xlsx";
+      }
       final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
       anchor.download = downloadName;
       var body = document.body;
