@@ -15,7 +15,8 @@ class WJHttp {
   Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
     var dataJson = param.toJson();
     print("Request:$dataJson");
-    final response = await http.post(Uri.parse("http://$ip:80/translationSystem"), headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(dataJson));
+    final response = await http.post(Uri.parse("http://$ip:80/translationSystem"),
+        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(dataJson));
     print("response:${param.cmd}:${response.body}");
     if (response.statusCode == 200) {
       return jsonDecode(utf8.decode(response.bodyBytes));
@@ -44,12 +45,14 @@ class WJHttp {
   }
 
   Future<http.Response> exportTranslationZip2(ExportTranslationParam exportTranslationParam) async {
-    final response = await http.post(Uri.parse("http://$ip:80/exportTranslation2"), headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(exportTranslationParam.toJson()));
+    final response = await http.post(Uri.parse("http://$ip:80/exportTranslation2"),
+        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(exportTranslationParam.toJson()));
     return response;
   }
 
   Future<http.Response> exportTranslationZip(String projectId, String platform) async {
-    final response = await http.get(Uri.parse("http://$ip:80/exportTranslation/$projectId/$platform"), headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/octet-stream', 'Accept': '*/*'});
+    final response = await http.get(Uri.parse("http://$ip:80/exportTranslation/$projectId/$platform"),
+        headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/octet-stream', 'Accept': '*/*'});
     return response;
   }
 
@@ -108,7 +111,6 @@ class WJHttp {
     });
   }
 
-
   Future<CommonResponse<void>> addModuleV2(Module module) async {
     CommonParam commonParam = CommonParam("addModule", data: module.toJson());
     return sendRequest(commonParam).then((value) {
@@ -137,18 +139,23 @@ class WJHttp {
     });
   }
 
-  Future<CommonListResponse<Language>> addLanguagesV2(List<Language> translation) async {
-    var json = translation.map((e) => e.toJson()).toList(growable: false);
+  Future<CommonListResponse<Language>> addLanguagesV2(List<Language> languageList) async {
+    var json = languageList.map((e) => e.toJson()).toList(growable: false);
     CommonParam commonParam = CommonParam("addLanguages", data: json);
     return sendRequest(commonParam).then((value) => CommonListResponse<Language>.fromJson(value, (json) {
-      return Language.fromJson(json);
-    }));
+          return Language.fromJson(json);
+        }));
   }
 
   Future<CommonListResponse<Translation>> addTranslationsV2(List<Translation> translation) async {
     var json = translation.map((e) => e.toJson()).toList(growable: false);
     CommonParam commonParam = CommonParam("addTranslations", data: json);
-    return sendRequest(commonParam).then((value) => CommonListResponse<Translation>.fromJson(value, (json) => Translation.fromJson(json)));
+    // return sendRequest(commonParam).then((value) => CommonListResponse<Translation>.fromJson(value, (json) => Translation.fromJson(json)));
+    return sendRequest(commonParam).then((value) {
+      return CommonListResponse<Translation>.fromJson(value, (json) {
+        return Translation.fromJson(json);
+      });
+    });
   }
 
   Future<CommonListResponse<Translation>> updateTranslationsV2(List<Translation> translation) async {

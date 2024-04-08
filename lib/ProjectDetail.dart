@@ -14,6 +14,7 @@ import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:hwj_translation_flutter/tookit/ImportTranslationToolkit.dart';
 import 'package:xml/xml.dart';
 import 'package:excel/excel.dart';
 import 'package:fuzzywuzzy/fuzzywuzzy.dart';
@@ -176,13 +177,26 @@ class _ProjectDetail extends State<ProjectDetail> {
           if (platForm == null) {
             return;
           }
+          onValue(result) {
+            var failedList = result.data;
+
+            if (failedList.isNotEmpty) {
+              print("有重复翻译");
+              toComparePage(failedList);
+            } else {
+              print("导入成功");
+              fetchTranslation();
+            }
+          }
+
           if (platForm == "excel") {
+            ImportTranslationToolkit().importExcel(languageList, project.projectId, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
           } else {
             buildImportLanguageDialog((language) {
               if (platForm == "android") {
-                importAndroid(language);
-              } else {
-                importIOS(language);
+                ImportTranslationToolkit().importAndroid(language, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
+              } else if (platForm == "ios") {
+                ImportTranslationToolkit().importAndroid(language, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
               }
             });
           }
@@ -193,30 +207,6 @@ class _ProjectDetail extends State<ProjectDetail> {
     actions.add(TextButton(
       onPressed: () {
         toExportPage();
-        // List<String> platforms = ["android", "ios", "excel"];
-        // showSelectPlatformDialog(platforms, (platForm) {
-        //   if (null == platForm) {
-        //     return;
-        //   }
-        //   if (platForm == "excel") {
-        //     exportTranslationExcel();
-        //   } else {
-        //     WJHttp().exportTranslationZip(project.projectId, platForm).then((value) {
-        //       var base64 = base64Encode(value.bodyBytes);
-        //       var downloadName = "LongVisionFullTranslation.zip";
-        //       final anchor = AnchorElement(href: 'data:application/octet-stream;charset=utf-8;base64,$base64')..target = 'blank';
-        //       anchor.download = downloadName;
-        //       var body = document.body;
-        //       if (null != body) {
-        //         body.append(anchor);
-        //       }
-        //       anchor.click();
-        //       anchor.remove();
-        //       print("export $platForm end");
-        //     });
-        //     return;
-        //   }
-        // });
       },
       child: const Text("导出"),
     ));
@@ -484,7 +474,8 @@ class _ProjectDetail extends State<ProjectDetail> {
               }
             } else {
               languageContentMapChange.keys.forEach((languageId) {
-                Translation newTranslation = Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                Translation newTranslation =
+                    Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
                 translationList.add(newTranslation);
               });
             }
@@ -613,7 +604,6 @@ class _ProjectDetail extends State<ProjectDetail> {
     onValue(value) {
       if (value.code == 200) {
         print("添加翻译成功");
-        // setState(() {});
         if (value.data.isNotEmpty) {
           toComparePage(value.data);
         } else {
@@ -626,7 +616,6 @@ class _ProjectDetail extends State<ProjectDetail> {
       } else {
         print("添加翻译失败，失败列表:${value.data.length}");
       }
-      // fetchTranslation();
     }
 
     if (add) {
@@ -654,12 +643,12 @@ class _ProjectDetail extends State<ProjectDetail> {
     List<Language> showLanguageList = [];
     int count = 0;
     languageList.forEach((element) {
-      if(count < 2){
+      if (count < 2) {
         showLanguageList.add(element);
         count++;
       }
     });
-    Navigator.of(context).push(MaterialPageRoute(builder: (content) => MergeProjectSelectProjectPage(translationRootMap.values.first,showLanguageList)));
+    Navigator.of(context).push(MaterialPageRoute(builder: (content) => MergeProjectSelectProjectPage(translationRootMap.values.first, showLanguageList)));
   }
 
   void toAddLanguagePage() async {
@@ -717,83 +706,6 @@ class _ProjectDetail extends State<ProjectDetail> {
       }
       fetchTranslation();
     });
-  }
-
-  void importIOS(Language language) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
-    if (result != null && result.files.isNotEmpty) {
-      final fileBytes = result.files.first.bytes;
-      if (null != fileBytes) {
-        String content = utf8.decode(fileBytes);
-        var split = content.split("\n");
-        List<Translation> translations = [];
-        for (String line in split) {
-          var kv = line.split("=");
-          if (kv.length == 2) {
-            var key = kv[0].trim();
-            key = key.substring(1, key.length - 1);
-            var value = kv[1].trim();
-            var lastIndex = value.lastIndexOf(";");
-            if (lastIndex != -1) {
-              value = value.substring(0, lastIndex);
-            }
-            value = value.substring(1, value.length - 1);
-            Translation translation = Translation(key, language.languageId ?? 0, value, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
-            translations.add(translation);
-          }
-        }
-        addTranslationRemote(translations, reFetchData: true, add: true);
-      }
-    }
-  }
-
-  void importAndroid(Language language) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
-    if (result != null && result.files.isNotEmpty) {
-      final fileBytes = result.files.first.bytes;
-      String xmlString;
-      if (null != fileBytes) {
-        xmlString = utf8.decode(fileBytes);
-      } else {
-        return;
-      }
-      var xmlDocument = XmlDocument.parse(xmlString);
-
-      List<Translation> translations = [];
-      for (var element in xmlDocument.childElements) {
-        var elementName = element.name.toXmlString();
-        print(elementName);
-        if (elementName == "resources") {
-          for (var childElement in element.childElements) {
-            var childElementName = childElement.name.toXmlString();
-            print(childElementName);
-            if (childElementName == "string") {
-              String languageKey = childElement.attributes.first.value;
-              String translationContent = childElement.innerText;
-              print("$languageKey:$translationContent");
-
-              Translation translation = Translation(languageKey, language.languageId ?? 0, translationContent, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
-              translations.add(translation);
-            } else if (childElementName == "string-array" || childElementName == "integer-array") {
-              String languageKey = childElement.attributes.first.value;
-              StringBuffer translationContentBuilder = StringBuffer();
-              for (int i = 0, j = childElement.childElements.length; i < j; i++) {
-                var thirdChildElement = childElement.childElements.elementAt(i);
-                translationContentBuilder.write(thirdChildElement.innerText);
-                if (i != j - 1) {
-                  translationContentBuilder.write("|");
-                }
-              }
-
-              String translationContent = translationContentBuilder.toString();
-              Translation translation = Translation(languageKey, language.languageId ?? 0, translationContent, project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? 0, forceAdd: false);
-              translations.add(translation);
-            }
-          }
-        }
-      }
-      addTranslationRemote(translations, reFetchData: true, add: true);
-    }
   }
 
   void exportTranslationExcel() {
