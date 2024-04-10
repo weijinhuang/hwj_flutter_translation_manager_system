@@ -1,4 +1,5 @@
 import 'dart:convert';
+// import 'dart:ffi';
 import 'dart:math';
 
 import 'package:hwj_translation_flutter/net.dart';
@@ -9,8 +10,8 @@ import 'package:convert/convert.dart';
 class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
-  // String ip = "172.16.26.46";
-  String ip = "127.0.0.1";
+  String ip = "172.16.26.46";
+  // String ip = "127.0.0.1";
 
   Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
     var dataJson = param.toJson();
@@ -23,6 +24,12 @@ class WJHttp {
     } else {
       throw Exception("net error");
     }
+  }
+
+  Future<CommonResponse<void>> mergeTranslation(String mainTranslationKey, List<String> deleteTranslationKeyList, String projectId) async {
+    MergeTranslationParam param = MergeTranslationParam(projectId, mainTranslationKey, deleteTranslationKeyList);
+    CommonParam commonParam = CommonParam("mergeTranslation", data: param.toJson());
+    return sendRequest(commonParam).then((value) => CommonResponse.fromJson(value, (json) {}));
   }
 
   Future<CommonListResponse<Project>?> fetchProjectsV2() async {

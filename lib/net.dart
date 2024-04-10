@@ -72,8 +72,9 @@ class Translation {
   bool? forceAdd = false;
   String? oldTranslationContent;
   String? selectedTranslationContent;
+  String? comment;
 
-  Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent});
+  Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent, this.comment});
 
   factory Translation.fromJson(Map<String, dynamic> json) => _$TranslationFromJson(json);
 
@@ -214,4 +215,17 @@ class ExportTranslationParam {
   factory ExportTranslationParam.fromJson(Map<String, dynamic> json) => _$ExportTranslationParamFromJson(json);
 
   Map<String, dynamic> toJson() => _$ExportTranslationParamToJson(this);
+}
+
+@JsonSerializable()
+class MergeTranslationParam {
+  String projectId;
+  String mainTranslationKey;
+  List<String> translationToBeHideKeyList;
+
+  MergeTranslationParam(this.projectId, this.mainTranslationKey, this.translationToBeHideKeyList);
+
+  factory MergeTranslationParam.fromJson(Map<String, dynamic> json) => _$MergeTranslationParamFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MergeTranslationParamToJson(this);
 }

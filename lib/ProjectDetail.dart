@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:hwj_translation_flutter/AddLanguagePage.dart';
 import 'package:hwj_translation_flutter/EditTranslationDetailPage.dart';
 import 'package:hwj_translation_flutter/ExportLanguagePage.dart';
-import 'package:hwj_translation_flutter/MergeProjectSelectProjectPage.dart';
+import 'package:hwj_translation_flutter/MergeTranslationPage.dart';
 import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
@@ -648,7 +648,10 @@ class _ProjectDetail extends State<ProjectDetail> {
         count++;
       }
     });
-    Navigator.of(context).push(MaterialPageRoute(builder: (content) => MergeProjectSelectProjectPage(translationRootMap.values.first, showLanguageList)));
+    bool refresh = await Navigator.of(context).push(MaterialPageRoute(builder: (content) => MergeTranslationPage(translationRootMap.values.first, showLanguageList)));
+    if(refresh){
+      fetchTranslation();
+    }
   }
 
   void toAddLanguagePage() async {

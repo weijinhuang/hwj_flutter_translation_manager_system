@@ -67,6 +67,7 @@ Translation _$TranslationFromJson(Map<String, dynamic> json) => Translation(
       moduleId: json['moduleId'] as int?,
       forceAdd: json['forceAdd'] as bool?,
       oldTranslationContent: json['oldTranslationContent'] as String?,
+      comment: json['comment'] as String?,
     )..selectedTranslationContent =
         json['selectedTranslationContent'] as String?;
 
@@ -81,6 +82,7 @@ Map<String, dynamic> _$TranslationToJson(Translation instance) =>
       'forceAdd': instance.forceAdd,
       'oldTranslationContent': instance.oldTranslationContent,
       'selectedTranslationContent': instance.selectedTranslationContent,
+      'comment': instance.comment,
     };
 
 Project _$ProjectFromJson(Map<String, dynamic> json) => Project(
@@ -223,4 +225,22 @@ Map<String, dynamic> _$ExportTranslationParamToJson(
     <String, dynamic>{
       'projectIdList': instance.projectIdList,
       'platform': instance.platform,
+    };
+
+MergeTranslationParam _$MergeTranslationParamFromJson(
+        Map<String, dynamic> json) =>
+    MergeTranslationParam(
+      json['projectId'] as String,
+      json['mainTranslationKey'] as String,
+      (json['translationToBeHideKeyList'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+    );
+
+Map<String, dynamic> _$MergeTranslationParamToJson(
+        MergeTranslationParam instance) =>
+    <String, dynamic>{
+      'projectId': instance.projectId,
+      'mainTranslationKey': instance.mainTranslationKey,
+      'translationToBeHideKeyList': instance.translationToBeHideKeyList,
     };
