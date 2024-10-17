@@ -73,6 +73,7 @@ class Translation {
   String? oldTranslationContent;
   String? selectedTranslationContent;
   String? comment;
+  int ratio = 0;
 
   Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent, this.comment});
 

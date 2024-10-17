@@ -130,7 +130,7 @@ class _MergeProjectSelectProjectPage extends State<MergeTranslationPage> {
       //Key
       String translationKey = languageTranslationMap.values.first.translationKey;
       bool selected = selectedTranslationKey.contains(translationKey);
-      Widget keyItem = buildTranslationText(translationKey, FontWeight.bold, false, 200,1);
+      Widget keyItem = buildTranslationText("(${languageTranslationMap.values.first.translationId})$translationKey", FontWeight.bold, false, 200,1);
       widgetList.add(keyItem);
 
       //翻译列表

@@ -14,6 +14,8 @@ class AddProjectPage extends StatefulWidget {
 class _AddProjectPageState extends State<AddProjectPage> {
   Project project = Project("", "");
 
+  var loading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,41 +51,52 @@ class _AddProjectPageState extends State<AddProjectPage> {
               margin: const EdgeInsets.only(top: 100),
               padding: const EdgeInsets.only(left: 30, top: 10, right: 30, bottom: 10),
               decoration: const BoxDecoration(color: Colors.blueAccent, borderRadius: BorderRadius.all(Radius.circular(30))),
-              child: TextButton(
-                  onPressed: () {
-                    _saveProjectToServer();
-                  },
-                  child: const Text(
-                    "确认",
-                    style: TextStyle(color: Colors.white),
-                  )),
+              child: buildConfirmBtn(),
             )
           ],
         ),
       ),
     );
   }
+  Widget buildConfirmBtn(){
+    if(loading){
+      return const CircularProgressIndicator();
+    }else{
+      return TextButton(
+          onPressed: () {
+            _saveProjectToServer();
+          },
+          child: const Text(
+            "确认",
+            style: TextStyle(color: Colors.white),
+          ));
+    }
+  }
 
   void _saveProjectToServer() {
     print("_saveProjectToServer");
-    WJHttp().addProjectV2(project).then((value) {
-      if (value.code == 200) {
-        print("success");
-        Navigator.pop(context, project);
-      } else {
-        return showDialog(
-            context: context,
-            builder: (context) {
-              return AlertDialog(content: Text(value.msg), actions: [
-                GestureDetector(
-                  child: const Text("好的"),
-                  onTap: () {
-                    Navigator.pop(context);
-                  },
-                )
-              ]);
-            });
-      }
+    setState(() {
+      loading = true;
+      WJHttp().addProjectV2(project).then((value) {
+        if (value.code == 200) {
+          print("success");
+          Navigator.pop(context, project);
+        } else {
+          return showDialog(
+              context: context,
+              builder: (context) {
+                return AlertDialog(content: Text(value.msg), actions: [
+                  GestureDetector(
+                    child: const Text("好的"),
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                  )
+                ]);
+              });
+        }
+    });
+
     });
   }
 

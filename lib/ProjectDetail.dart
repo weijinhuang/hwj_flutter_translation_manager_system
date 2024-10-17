@@ -196,7 +196,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               if (platForm == "android") {
                 ImportTranslationToolkit().importAndroid(language, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
               } else if (platForm == "ios") {
-                ImportTranslationToolkit().importAndroid(language, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
+                ImportTranslationToolkit().importIOS(language, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
               }
             });
           }
@@ -780,7 +780,9 @@ class _ProjectDetail extends State<ProjectDetail> {
         }
         if (compareString != null) {
           var ratioValue = ratio(keyword, compareString);
-          if (ratioValue > 50) {
+          if (ratioValue > 20) {
+            print("$compareString : $ratioValue");
+            element.ratio = ratioValue;
             searchResultKey.add(element.translationKey);
           }
         }
@@ -795,6 +797,13 @@ class _ProjectDetail extends State<ProjectDetail> {
       translationListShowing.clear();
       translationListShowing.addAll(originalTranslationList);
     }
+    translationListShowing.sort((t1,t2){
+      return t2.ratio - t1.ratio;
+    });
+    print("sort");
+    translationListShowing.forEach((element) {
+      print("${element.translationContent} ${element.ratio}");
+    });
     setState(() {
       rebuildTranslationData();
     });
