@@ -36,7 +36,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
     super.initState();
     _repeatController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
     _animation = Tween<double>(begin: 0, end: 1).animate(_repeatController);
-
+    defaultFrom = widget.languageList.first.languageName;
     if (null != widget.languageIdContentMapParam) {
       for (var language in widget.languageList) {
         int languageId = language.languageId!;
@@ -123,7 +123,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
                     labelText: "${language.languageName}(${language.languageDes})"),
                 onChanged: (value) {
                   translationContentMap[language.languageId ?? 0] = value;
-                  if (language.languageName == "en") {
+                  if (language.languageName == defaultFrom) {
                     defaultTranslateSrc = value;
                   }
                 },

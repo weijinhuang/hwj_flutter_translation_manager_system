@@ -10,8 +10,7 @@ class TranslationComparePage extends StatefulWidget {
   List<Translation> translationList;
 
   @override
-  State<StatefulWidget> createState() =>
-      _TranslationComparePage(translationList);
+  State<StatefulWidget> createState() => _TranslationComparePage(translationList);
 }
 
 class _TranslationComparePage extends State<TranslationComparePage> {
@@ -63,15 +62,20 @@ class _TranslationComparePage extends State<TranslationComparePage> {
                 children: [
                   buildTranslationText("Key", "", 300, FontWeight.bold),
                   Expanded(
-                    child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          buildTranslationText(
-                              "原翻译", "", null, FontWeight.bold),
-                          buildTranslationText(
-                              "新翻译", "", null, FontWeight.bold),
-                        ]),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                      GestureDetector(
+                        child: buildTranslationText("原翻译", "", null, FontWeight.bold),
+                        onTap: () {
+                          selectAllOriginalTranslation();
+                        },
+                      ),
+                      GestureDetector(
+                        child: buildTranslationText("新翻译", "", null, FontWeight.bold),
+                        onTap: () {
+                          selectAllNewTranslation();
+                        },
+                      ),
+                    ]),
                   )
                 ],
               ),
@@ -96,8 +100,7 @@ class _TranslationComparePage extends State<TranslationComparePage> {
       mainAxisSize: MainAxisSize.max,
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        buildTranslationText(
-            translation.translationKey, "", 300, FontWeight.bold),
+        buildTranslationText(translation.translationKey, "", 300, FontWeight.bold),
         Flexible(
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -105,14 +108,9 @@ class _TranslationComparePage extends State<TranslationComparePage> {
               Expanded(
                 flex: 1,
                 child: GestureDetector(
-                  child: buildTranslationText(
-                      translation.oldTranslationContent ?? "",
-                      translation.selectedTranslationContent ?? "",
-                      null,
-                      null),
+                  child: buildTranslationText(translation.oldTranslationContent ?? "", translation.selectedTranslationContent ?? "", null, null),
                   onTap: () {
-                    translation.selectedTranslationContent =
-                        translation.oldTranslationContent;
+                    translation.selectedTranslationContent = translation.oldTranslationContent;
                     setState(() {});
                   },
                 ),
@@ -120,11 +118,9 @@ class _TranslationComparePage extends State<TranslationComparePage> {
               Expanded(
                 flex: 1,
                 child: GestureDetector(
-                  child: buildTranslationText(translation.translationContent,
-                      translation.selectedTranslationContent ?? "", null, null),
+                  child: buildTranslationText(translation.translationContent, translation.selectedTranslationContent ?? "", null, null),
                   onTap: () {
-                    translation.selectedTranslationContent =
-                        translation.translationContent;
+                    translation.selectedTranslationContent = translation.translationContent;
                     setState(() {});
                   },
                 ),
@@ -136,8 +132,7 @@ class _TranslationComparePage extends State<TranslationComparePage> {
     );
   }
 
-  Widget buildTranslationText(
-      String text, String selectedText, double? width, FontWeight? fontWeight) {
+  Widget buildTranslationText(String text, String selectedText, double? width, FontWeight? fontWeight) {
     // print("buildTranslationText $text");
     Color textBackColor;
     Color textColor;
@@ -159,35 +154,53 @@ class _TranslationComparePage extends State<TranslationComparePage> {
   }
 
   void saveTranslation() {
+    List<Translation> updateTranslationList = [];
     for (var element in translationList) {
-
       String? selectedTranslationContent = element.selectedTranslationContent;
-      if (null != selectedTranslationContent) {
+      if (null != selectedTranslationContent && selectedTranslationContent != element.oldTranslationContent) {
         element.translationContent = selectedTranslationContent;
         element.forceAdd = true;
-      } else {
-        showDialog(
-            barrierDismissible: true,
-            context: context,
-            builder: (context) {
-              return AlertDialog(
-                  elevation: 10,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  title: Text("${element.translationKey}未选择翻译"));
-            });
-        return;
+        updateTranslationList.add(element);
       }
     }
-    WJHttp().addTranslationsV2(translationList).then((value) {
-      if (value.code == 200) {
-        print("添加翻译成功");
-        print("Navigator.of(context).pop();");
-        Navigator.of(context).pop(true);
-      } else {
-        print("添加翻译失败，失败列表:${value.data.length}");
+
+    if (updateTranslationList.isNotEmpty) {
+      WJHttp().addTranslationsV2(updateTranslationList).then((value) {
+        if (value.code == 200) {
+          print("添加翻译成功");
+          Navigator.of(context).pop(true);
+        } else {
+          print("添加翻译失败，失败列表:${value.data.length}");
+        }
+        // fetchTranslation();
+      });
+      // showDialog(
+      //     barrierDismissible: true,
+      //     context: context,
+      //     builder: (context) {
+      //       return AlertDialog(elevation: 10, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), title: const Text("未选择翻译"));
+      //     });
+      // return;
+    }else{
+      Navigator.of(context).pop(true);
+    }
+
+
+  }
+
+  void selectAllOriginalTranslation() {
+    setState(() {
+      for (var element in translationList) {
+        element.selectedTranslationContent = element.oldTranslationContent;
       }
-      // fetchTranslation();
+    });
+  }
+
+  void selectAllNewTranslation() {
+    setState(() {
+      for (var element in translationList) {
+        element.selectedTranslationContent = element.translationContent;
+      }
     });
   }
 }

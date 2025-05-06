@@ -10,7 +10,7 @@ import 'package:convert/convert.dart';
 class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
-  String ip = "172.16.26.46";
+  String ip = "172.16.21.156";
   // String ip = "127.0.0.1";
 
   Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
@@ -150,8 +150,15 @@ class WJHttp {
     var json = languageList.map((e) => e.toJson()).toList(growable: false);
     CommonParam commonParam = CommonParam("addLanguages", data: json);
     return sendRequest(commonParam).then((value) => CommonListResponse<Language>.fromJson(value, (json) {
-          return Language.fromJson(json);
-        }));
+      return Language.fromJson(json);
+    }));
+  }
+  Future<CommonListResponse<Language>> updateLanguagesV2(List<Language> languageList) async {
+    var json = languageList.map((e) => e.toJson()).toList(growable: false);
+    CommonParam commonParam = CommonParam("updateLanguages", data: json);
+    return sendRequest(commonParam).then((value) => CommonListResponse<Language>.fromJson(value, (json) {
+      return Language.fromJson(json);
+    }));
   }
 
   Future<CommonListResponse<Translation>> addTranslationsV2(List<Translation> translation) async {

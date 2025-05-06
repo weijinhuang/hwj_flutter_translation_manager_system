@@ -73,9 +73,9 @@ class Translation {
   String? oldTranslationContent;
   String? selectedTranslationContent;
   String? comment;
-  int ratio = 0;
+  int? ratio = 0;
 
-  Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent, this.comment});
+  Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent, this.comment,this.ratio});
 
   factory Translation.fromJson(Map<String, dynamic> json) => _$TranslationFromJson(json);
 
@@ -107,8 +107,9 @@ class Language {
   String languageDes;
   String projectId;
   int? color = Colors.white.value;
+  int? languageOrder = 0;
 
-  Language(this.languageName, this.languageDes, this.projectId, {this.languageId});
+  Language(this.languageName, this.languageDes, this.projectId, {this.languageId,this.languageOrder});
 
   factory Language.fromJson(Map<String, dynamic> json) => _$LanguageFromJson(json);
 

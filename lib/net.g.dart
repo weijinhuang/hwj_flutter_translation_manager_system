@@ -68,6 +68,7 @@ Translation _$TranslationFromJson(Map<String, dynamic> json) => Translation(
       forceAdd: json['forceAdd'] as bool?,
       oldTranslationContent: json['oldTranslationContent'] as String?,
       comment: json['comment'] as String?,
+      ratio: json['ratio'] as int?,
     )..selectedTranslationContent =
         json['selectedTranslationContent'] as String?;
 
@@ -83,6 +84,7 @@ Map<String, dynamic> _$TranslationToJson(Translation instance) =>
       'oldTranslationContent': instance.oldTranslationContent,
       'selectedTranslationContent': instance.selectedTranslationContent,
       'comment': instance.comment,
+      'ratio': instance.ratio,
     };
 
 Project _$ProjectFromJson(Map<String, dynamic> json) => Project(
@@ -101,6 +103,7 @@ Language _$LanguageFromJson(Map<String, dynamic> json) => Language(
       json['languageDes'] as String,
       json['projectId'] as String,
       languageId: json['languageId'] as int?,
+      languageOrder: json['languageOrder'] as int?,
     )..color = json['color'] as int?;
 
 Map<String, dynamic> _$LanguageToJson(Language instance) => <String, dynamic>{
@@ -109,6 +112,7 @@ Map<String, dynamic> _$LanguageToJson(Language instance) => <String, dynamic>{
       'languageDes': instance.languageDes,
       'projectId': instance.projectId,
       'color': instance.color,
+      'languageOrder': instance.languageOrder,
     };
 
 Module _$ModuleFromJson(Map<String, dynamic> json) => Module(

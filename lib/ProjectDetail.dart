@@ -10,6 +10,7 @@ import 'package:hwj_translation_flutter/AddLanguagePage.dart';
 import 'package:hwj_translation_flutter/EditTranslationDetailPage.dart';
 import 'package:hwj_translation_flutter/ExportLanguagePage.dart';
 import 'package:hwj_translation_flutter/MergeTranslationPage.dart';
+import 'package:hwj_translation_flutter/ReorderLanguageListPage.dart';
 import 'package:hwj_translation_flutter/TranslationComparePage.dart';
 import 'package:hwj_translation_flutter/WJHttp.dart';
 import 'package:hwj_translation_flutter/net.dart';
@@ -77,11 +78,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             if (languageListWrapper.code == 200) {
               languageList = languageListWrapper.data;
               languageList.sort((a, b) {
-                if (a.languageName == "en" || a.languageName == "zh" || a.languageName == "zh-TW" || a.languageName == "zh-CN") {
-                  return 0;
-                } else {
-                  return 1;
-                }
+                return (a.languageOrder??0) - (b.languageOrder??0);
               });
               http.fetchTranslationV2(project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? -1).then((translationListWrapper) {
                 originalTranslationList = translationListWrapper.data;
@@ -219,6 +216,7 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   GlobalKey importBtnKey = GlobalKey();
+  GlobalKey languageTitleItemKey = GlobalKey();
 
   Widget buildBody() {
     return Container(
@@ -303,15 +301,18 @@ class _ProjectDetail extends State<ProjectDetail> {
     widgetList.add(textItem);
     for (Language language in languageList) {
       Widget textItem = buildTranslationText("${language.languageDes}(${language.languageName})", FontWeight.bold);
-      GestureDetector gestureDetector = GestureDetector(
+      GestureDetector? gestureDetector;
+      gestureDetector = GestureDetector(
+          key: GlobalKey(debugLabel: language.languageName),
           child: textItem,
-          onDoubleTap: () {
-            showDialog(
-                barrierDismissible: true,
-                context: context,
-                builder: (context) {
-                  return buildDeleteLanguageDialog(language);
-                });
+          onTap: () {
+            showLanguageOptDialog(gestureDetector!, language);
+            // showDialog(
+            //     barrierDismissible: true,
+            //     context: context,
+            //     builder: (context) {
+            //       return buildDeleteLanguageDialog(language);
+            //     });
           });
       widgetList.add(gestureDetector);
     }
@@ -537,6 +538,51 @@ class _ProjectDetail extends State<ProjectDetail> {
     }
   }
 
+  void buildLanguageOptDialog(GestureDetector gestureDetector, List<String> platforms, Function action) {
+    Key? globalKey = gestureDetector.key;
+    if (globalKey != null) {
+      if (globalKey is GlobalKey) {
+        RenderBox? button = globalKey.currentContext?.findRenderObject() as RenderBox?;
+        final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+        if (null != button && null != overlay) {
+          final RelativeRect position = RelativeRect.fromRect(
+            Rect.fromPoints(
+              button.localToGlobal(Offset.zero, ancestor: overlay),
+              button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+            ),
+            Offset.zero & overlay.size,
+          );
+
+          List<PopupMenuEntry<String>> languageItemArray = [];
+          for (String platform in platforms) {
+            languageItemArray.add(PopupMenuItem<String>(value: platform, child: ListTile(leading: const Icon(Icons.visibility), title: Text(platform))));
+          }
+          showMenu(context: context, position: position, items: languageItemArray).then<void>((value) {
+            if (!mounted) return null;
+            importPlatform = value;
+            action(value);
+          });
+        }
+      }
+    }
+  }
+
+  void showLanguageOptDialog(GestureDetector gestureDetector, Language language) {
+    List<String> optItemList = ["排序", "删除"];
+    buildLanguageOptDialog(gestureDetector, optItemList, (optItem) {
+      if (optItem == "排序") {
+        toReorderLanguagePage();
+      } else if (optItem == "删除") {
+        showDialog(
+            barrierDismissible: true,
+            context: context,
+            builder: (context) {
+              return buildDeleteLanguageDialog(language);
+            });
+      }
+    });
+  }
+
   buildDeleteLanguageDialog(Language language) {
     return AlertDialog(
       elevation: 10,
@@ -649,7 +695,7 @@ class _ProjectDetail extends State<ProjectDetail> {
       }
     });
     bool refresh = await Navigator.of(context).push(MaterialPageRoute(builder: (content) => MergeTranslationPage(translationRootMap.values.first, showLanguageList)));
-    if(refresh){
+    if (refresh) {
       fetchTranslation();
     }
   }
@@ -658,6 +704,16 @@ class _ProjectDetail extends State<ProjectDetail> {
     List<Language>? newLangList = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => AddLanguagePage(project, languageList)));
     if (newLangList != null && newLangList.isNotEmpty) {
       addLanguageRemote(newLangList);
+    }
+  }
+
+  void toReorderLanguagePage() async {
+    List<Language>? newLangList = await Navigator.of(context).push(MaterialPageRoute(builder: (context) => ReorderLanguageListPage(project, languageList)));
+    if (newLangList != null && newLangList.isNotEmpty) {
+      setState(() {
+        languageList = newLangList;
+        rebuildTranslationData();
+      });
     }
   }
 
@@ -797,8 +853,8 @@ class _ProjectDetail extends State<ProjectDetail> {
       translationListShowing.clear();
       translationListShowing.addAll(originalTranslationList);
     }
-    translationListShowing.sort((t1,t2){
-      return t2.ratio - t1.ratio;
+    translationListShowing.sort((t1, t2) {
+      return (t2.ratio ?? 0) - (t1.ratio ?? 0);
     });
     print("sort");
     translationListShowing.forEach((element) {
