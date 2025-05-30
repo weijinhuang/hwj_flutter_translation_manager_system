@@ -49,6 +49,8 @@ class _ProjectDetail extends State<ProjectDetail> {
   bool titleScrolling = false;
   bool contentScrolling = false;
 
+  bool fuzzySearch = true;
+
   @override
   void initState() {
     super.initState();
@@ -78,7 +80,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             if (languageListWrapper.code == 200) {
               languageList = languageListWrapper.data;
               languageList.sort((a, b) {
-                return (a.languageOrder??0) - (b.languageOrder??0);
+                return (a.languageOrder ?? 0) - (b.languageOrder ?? 0);
               });
               http.fetchTranslationV2(project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? -1).then((translationListWrapper) {
                 originalTranslationList = translationListWrapper.data;
@@ -247,6 +249,16 @@ class _ProjectDetail extends State<ProjectDetail> {
                         searchTranslation(value);
                       },
                     ),
+                  ),
+                  const Text("模糊查找"),
+                  Switch(
+                    value: fuzzySearch,
+                    onChanged: (bool value) {
+                      setState(() {
+                        fuzzySearch = value;
+                      });
+                    },
+                    activeColor: Colors.blueAccent,
                   ),
                 ],
               ),
@@ -835,11 +847,17 @@ class _ProjectDetail extends State<ProjectDetail> {
           }
         }
         if (compareString != null) {
-          var ratioValue = ratio(keyword, compareString);
-          if (ratioValue > 20) {
-            print("$compareString : $ratioValue");
-            element.ratio = ratioValue;
-            searchResultKey.add(element.translationKey);
+          if (fuzzySearch) {
+            var ratioValue = ratio(keyword, compareString);
+            if (ratioValue > 20) {
+              print("$compareString : $ratioValue");
+              element.ratio = ratioValue;
+              searchResultKey.add(element.translationKey);
+            }
+          } else {
+            if (compareString.contains(keyword)) {
+              searchResultKey.add(element.translationKey);
+            }
           }
         }
       });
