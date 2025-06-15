@@ -95,9 +95,15 @@ class ImportTranslationToolkit {
     if (result != null && result.files.isNotEmpty) {
       var bytes = result.files.first.bytes;
       if (null != bytes) {
-        Excel excel = Excel.decodeBytes(bytes);
-        var sheets = excel.sheets;
-        if (sheets.isNotEmpty) {
+        Excel? excel;
+        try {
+          excel = Excel.decodeBytes(bytes);
+        } catch (e) {
+          return CommonListResponse(-1, "Excel 解析出错，建议使用Microsoft Office Excel来编辑表格，不要使用金山WPS \n错误信息： $e", []);
+        }
+
+        var sheets = excel?.sheets;
+        if (sheets != null && sheets.isNotEmpty) {
           var firstSheet = sheets.values.first;
           if (firstSheet.maxRows > 0) {
             var firstRow = firstSheet.rows.first;

@@ -177,15 +177,25 @@ class _ProjectDetail extends State<ProjectDetail> {
             return;
           }
           onValue(result) {
-            var failedList = result.data;
-
-            if (failedList.isNotEmpty) {
-              print("有重复翻译");
-              toComparePage(failedList);
-            } else {
-              print("导入成功");
-              fetchTranslation();
+            if(result.code == -1){
+              showDialog(
+                  barrierDismissible: true,
+                  context: context,
+                  builder: (context)=>AlertDialog(
+                    title: const Text("导入翻译出错"),
+                    content: Text(result.msg),
+                  ));
+            }else{
+              var failedList = result.data;
+              if (failedList.isNotEmpty) {
+                print("有重复翻译");
+                toComparePage(failedList);
+              } else {
+                print("导入成功");
+                fetchTranslation();
+              }
             }
+
           }
 
           if (platForm == "excel") {
@@ -487,8 +497,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               }
             } else {
               languageContentMapChange.keys.forEach((languageId) {
-                Translation newTranslation =
-                    Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+                Translation newTranslation = Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
                 translationList.add(newTranslation);
               });
             }
@@ -784,7 +793,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     Excel excel = Excel.createExcel();
     String? defaultSheet = excel.getDefaultSheet();
     List<CellValue> titleRow = List.empty(growable: true);
-    titleRow.add(const TextCellValue("Key"));
+    titleRow.add(TextCellValue("Key"));
     for (int i = 0; i < languageList.length; i++) {
       Language language = languageList[i];
       CellValue cellValue = TextCellValue("${language.languageName}(${language.languageDes})");

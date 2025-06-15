@@ -36,7 +36,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
-  http: ^0.13.5
+  http: ^1.4.0
   json_annotation: ^4.7.0
 
 dev_dependencies:
@@ -48,15 +48,15 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
-  build_runner: ^2.3.3
-  json_serializable: ^6.5.4
-  file_picker: ^5.3.3
-  xml: ^6.3.0
-  excel: ^4.0.0
-  crypto: ^3.0.3
-  flutter_archive: ^5.0.0
-  fuzzywuzzy: ^1.1.6
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.15
+  json_serializable: ^6.9.5
+  file_picker: ^10.2.0
+  xml: ^6.5.0
+  excel: ^4.0.6
+  crypto: ^3.0.6
+  flutter_archive: ^6.0.3
+  fuzzywuzzy: ^1.2.0
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
