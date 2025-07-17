@@ -50,7 +50,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     fetchProjects();
   }
@@ -95,13 +94,13 @@ class _MyHomePageState extends State<MyHomePage> {
             )),
         Expanded(
           child: GridView.builder(
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 400),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 400, mainAxisExtent: 200),
             itemBuilder: (context, index) {
               var project = projects[index];
               return Container(
                 margin: const EdgeInsets.only(top: 50),
                 child: Center(
-                  child: Stack(alignment: AlignmentDirectional(1, -1), children: [
+                  child: Stack(alignment: const AlignmentDirectional(1, -1), children: [
                     GestureDetector(
                       onTap: () {
                         _toProjectDetailPage(project);
@@ -109,12 +108,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       child: Container(
                         width: 250,
                         height: 100,
-                        decoration: BoxDecoration(color: Colors.primaries[index], borderRadius: BorderRadius.circular(5)),
+                        decoration: BoxDecoration(color: Colors.primaries[project.projectId.hashCode % 17], borderRadius: BorderRadius.circular(5)),
                         alignment: Alignment.center,
-                        child: Text(
-                          project.projectId,
-                          style: const TextStyle(color: Colors.white),
-                        ),
+                        child: Text(project.projectId, style: const TextStyle(fontSize: 14, color: Colors.black)
+                            // style: const TextStyle(color: Colors.white),
+                            ),
                       ),
                     ),
                     GestureDetector(

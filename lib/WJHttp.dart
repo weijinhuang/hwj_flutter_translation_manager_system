@@ -10,8 +10,8 @@ import 'package:convert/convert.dart';
 class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
-  // String ip = "172.16.21.156";
-  String ip = "192.168.3.188";
+  String ip = "172.16.21.156";
+  // String ip = "192.168.3.188";
 
   Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
     var dataJson = param.toJson();

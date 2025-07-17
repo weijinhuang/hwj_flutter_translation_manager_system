@@ -61,7 +61,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         return;
       }
       contentScrolling = true;
-      print("translationListController scroll ${translationListController.offset}");
+      // print("translationListController scroll ${translationListController.offset}");
       titleController.jumpTo(translationListController.offset);
     });
   }
@@ -121,9 +121,6 @@ class _ProjectDetail extends State<ProjectDetail> {
     return Scaffold(
         resizeToAvoidBottomInset: false,
         floatingActionButton: FloatingActionButton(
-          enableFeedback: false,
-          tooltip: "添加翻译",
-          elevation: 30,
           onPressed: () async {
             var result = await showDialog(
                 barrierDismissible: true,
@@ -142,6 +139,9 @@ class _ProjectDetail extends State<ProjectDetail> {
                 });
             handleTranslationEdit(result, true);
           },
+          enableFeedback: false,
+          tooltip: "添加翻译",
+          elevation: 30,
           child: const Icon(Icons.add),
         ),
         backgroundColor: Colors.white,
@@ -159,14 +159,11 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   List<Widget> buildActions() {
     List<Widget> actions = [];
-    actions.add(GestureDetector(
-      onTap: () {
+    actions.add(TextButton(
+      onPressed: () {
         toAddLanguagePage();
       },
-      child: Container(
-        margin: const EdgeInsets.only(left: 10, right: 20),
-        child: const Icon(Icons.add_circle_sharp),
-      ),
+      child: const Text("新增语言"),
     ));
     actions.add(TextButton(
       key: importBtnKey,
@@ -177,15 +174,15 @@ class _ProjectDetail extends State<ProjectDetail> {
             return;
           }
           onValue(result) {
-            if(result.code == -1){
+            if (result.code == -1) {
               showDialog(
                   barrierDismissible: true,
                   context: context,
-                  builder: (context)=>AlertDialog(
-                    title: const Text("导入翻译出错"),
-                    content: Text(result.msg),
-                  ));
-            }else{
+                  builder: (context) => AlertDialog(
+                        title: const Text("导入翻译出错"),
+                        content: Text(result.msg),
+                      ));
+            } else {
               var failedList = result.data;
               if (failedList.isNotEmpty) {
                 print("有重复翻译");
@@ -195,7 +192,6 @@ class _ProjectDetail extends State<ProjectDetail> {
                 fetchTranslation();
               }
             }
-
           }
 
           if (platForm == "excel") {
@@ -227,6 +223,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     return actions;
   }
 
+  GlobalKey addLanguageKey = GlobalKey();
   GlobalKey importBtnKey = GlobalKey();
   GlobalKey languageTitleItemKey = GlobalKey();
 
@@ -234,7 +231,7 @@ class _ProjectDetail extends State<ProjectDetail> {
     return Container(
       // color: Colors.blueGrey,
 
-      margin: const EdgeInsets.only(left: 20, top: 50, right: 20, bottom: 80),
+      margin: const EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 80),
       child: Column(
         // physics: const NeverScrollableScrollPhysics(),
         // crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -242,7 +239,7 @@ class _ProjectDetail extends State<ProjectDetail> {
           SizedBox(
             height: 40,
             child: Container(
-              decoration: const BoxDecoration(color: Color(0xFFE0E0E0)),
+              decoration: const BoxDecoration(color: Color(0xFFE0E0E0), borderRadius: BorderRadius.all(Radius.circular(25.0))),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 children: [
@@ -380,23 +377,6 @@ class _ProjectDetail extends State<ProjectDetail> {
                   return buildTranslationEditDialog(translationKey, context, languageTranslationMap);
                 });
             handleTranslationEdit(result, false);
-            // if (null != result && result.isNotEmpty) {
-            //   for (Translation translation in result) {
-            //     if (null != mCurrentSelectedModule) {
-            //       int? moduleId = mCurrentSelectedModule?.moduleId;
-            //       if (null != moduleId) {
-            //         var translationKeyMap = translationRootMap[moduleId];
-            //         if (null != translationKeyMap) {
-            //           var translationKeyLanguageMap = translationKeyMap[translation.translationKey];
-            //           if (null != translationKeyLanguageMap) {
-            //             translationKeyLanguageMap[translation.languageId] = translation;
-            //           }
-            //         }
-            //       }
-            //     }
-            //   }
-            // }
-            // addTranslationRemote(result, false);
           },
         ));
       }
@@ -449,19 +429,17 @@ class _ProjectDetail extends State<ProjectDetail> {
   }
 
   Widget buildTranslationEditDialog(String? translationKey, BuildContext context, Map<int, Translation>? translationIdContentMap) {
-    String? titleText;
-    if (translationKey == null) {
-      titleText = "添加语言";
-    } else {
-      titleText = "编辑语言";
-    }
-    print(titleText);
-
     return AlertDialog(
       elevation: 10,
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(titleText),
+      // title: Row(
+      //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      //   children: [
+      //     Text(titleText),
+      //     Text("复制"),
+      //   ],
+      // ),
       content: SizedBox(
         width: 1000,
         child: EditTranslationDetailPage(project.projectId, mCurrentSelectedModule?.moduleId ?? 0, translationKey, translationIdContentMap, languageList),
@@ -469,39 +447,70 @@ class _ProjectDetail extends State<ProjectDetail> {
     );
   }
 
-  void handleTranslationEdit(Map<String, Map<int, String?>?>? translationContentMap, bool add) {
+  void handleTranslationEdit(Map<String, Map<int, Translation?>?>? translationContentMap, bool add) {
     if (null != translationContentMap) {
       String translationKey = translationContentMap.keys.first;
-      Map<int, String?>? languageContentMapChange = translationContentMap.values.first;
-      if (languageContentMapChange != null) {
+      print("编辑回调：$translationKey");
+      Map<int, Translation?>? languageIdToTranslationMap = translationContentMap.values.first;
+      if (languageIdToTranslationMap != null) {
         if (null != mCurrentSelectedModule) {
           int? moduleId = mCurrentSelectedModule?.moduleId;
           if (null != moduleId) {
-            Map<int, Translation>? localTranslationKeyLanguageMap;
-            List<Translation> translationList = [];
-            localTranslationKeyLanguageMap = translationRootMap[moduleId]?[translationKey];
-            if (null != localTranslationKeyLanguageMap) {
-              for (Language language in languageList) {
-                String? changeContent = languageContentMapChange[language.languageId];
-                Translation? translation = localTranslationKeyLanguageMap[language.languageId];
-                if (null != changeContent) {
-                  if (null != translation) {
-                    translation.translationContent = changeContent;
-                    translation.forceAdd = false;
-                  } else {
-                    translation = Translation(translationKey, language.languageId ?? 0, changeContent, project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
-                    localTranslationKeyLanguageMap[language.languageId ?? 0] = translation;
+            List<Translation> addTranslationList = [];
+            List<Translation> updateTranslationList = [];
+            for (Translation? translation in languageIdToTranslationMap.values) {
+              if (translation != null) {
+                if (translation.translationId == null) {
+                  translation.translationKey = translationKey;
+                  var oldTranslationContent = translation.oldTranslationContent;
+                  if (translation.translationContent.trim().isNotEmpty || (oldTranslationContent != null && oldTranslationContent.isNotEmpty)) {
+                    print("新增翻译：${translation.toJson()}");
+                    addTranslationList.add(translation);
                   }
-                  translationList.add(translation);
+                } else {
+                  var oldTranslationContent = translation.oldTranslationContent;
+                  if (translation.translationKey != translationKey || //是否修改过key
+                          oldTranslationContent != null //是否修改过翻译
+                      ) {
+                    translation.translationKey = translationKey;
+                    print("更新翻译：${translation.toJson()}");
+                    updateTranslationList.add(translation);
+                  }
+
                 }
               }
-            } else {
-              languageContentMapChange.keys.forEach((languageId) {
-                Translation newTranslation = Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
-                translationList.add(newTranslation);
-              });
             }
-            addTranslationRemote(translationList, add: add, reFetchData: true);
+            if (addTranslationList.isNotEmpty) {
+              addTranslationRemote(addTranslationList, add: true, reFetchData: true);
+            }
+            if (updateTranslationList.isNotEmpty) {
+              addTranslationRemote(updateTranslationList, add: false, reFetchData: true);
+            }
+
+            // Map<int, Translation>? localTranslationKeyLanguageMap;
+            // localTranslationKeyLanguageMap = translationRootMap[moduleId]?[translationKey];
+            // if (null != localTranslationKeyLanguageMap) {
+            //   for (Language language in languageList) {
+            //     String? changeContent = languageContentMapChange[language.languageId];
+            //     Translation? translation = localTranslationKeyLanguageMap[language.languageId];
+            //     if (null != changeContent) {
+            //       if (null != translation) {
+            //         translation.translationContent = changeContent;
+            //         translation.forceAdd = false;
+            //       } else {
+            //         translation = Translation(translationKey, language.languageId ?? 0, changeContent, project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+            //         localTranslationKeyLanguageMap[language.languageId ?? 0] = translation;
+            //       }
+            //       translationList.add(translation);
+            //     }
+            //   }
+            // } else {
+            //   languageContentMapChange.keys.forEach((languageId) {
+            //     Translation newTranslation = Translation(translationKey, languageId, languageContentMapChange[languageId] ?? "", project.projectId, forceAdd: true, moduleId: mCurrentSelectedModule?.moduleId ?? 0);
+            //     translationList.add(newTranslation);
+            //   });
+            // }
+            // addTranslationRemote(translationList, add: add, reFetchData: true);
           }
         }
       }
