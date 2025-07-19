@@ -1,5 +1,4 @@
 import 'dart:convert';
-// import 'dart:ffi';
 import 'dart:math';
 
 import 'package:hwj_translation_flutter/net.dart';
@@ -11,6 +10,7 @@ class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
   String ip = "172.16.21.156";
+
   // String ip = "192.168.3.188";
 
   Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
@@ -150,15 +150,16 @@ class WJHttp {
     var json = languageList.map((e) => e.toJson()).toList(growable: false);
     CommonParam commonParam = CommonParam("addLanguages", data: json);
     return sendRequest(commonParam).then((value) => CommonListResponse<Language>.fromJson(value, (json) {
-      return Language.fromJson(json);
-    }));
+          return Language.fromJson(json);
+        }));
   }
+
   Future<CommonListResponse<Language>> updateLanguagesV2(List<Language> languageList) async {
     var json = languageList.map((e) => e.toJson()).toList(growable: false);
     CommonParam commonParam = CommonParam("updateLanguages", data: json);
     return sendRequest(commonParam).then((value) => CommonListResponse<Language>.fromJson(value, (json) {
-      return Language.fromJson(json);
-    }));
+          return Language.fromJson(json);
+        }));
   }
 
   Future<CommonListResponse<Translation>> addTranslationsV2(List<Translation> translation) async {
@@ -176,5 +177,11 @@ class WJHttp {
     var json = translation.map((e) => e.toJson()).toList(growable: false);
     CommonParam commonParam = CommonParam("updateTranslations", data: json);
     return sendRequest(commonParam).then((value) => CommonListResponse<Translation>.fromJson(value, (json) => Translation.fromJson(json)));
+  }
+
+  Future<CommonResponse<int?>> checkTranslationKey(CheckTranslationKeyParam param) async {
+    var json = param.toJson();
+    CommonParam commonParam = CommonParam("checkTranslationKey", data: json);
+    return sendRequest(commonParam).then((value) => CommonResponse.fromJson(value, (json) => json as int));
   }
 }

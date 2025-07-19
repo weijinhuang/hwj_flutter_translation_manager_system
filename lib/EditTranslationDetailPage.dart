@@ -154,7 +154,12 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
       child: Row(
         children: [
           Expanded(
-            child: keyText,
+            child: Stack(
+                alignment: AlignmentDirectional.centerStart,
+                children: [
+              keyText,
+              Align(alignment: Alignment.centerRight, child: buildCheckTranslationKeyButton()),
+            ]),
           ),
           buildTranslationAllBtn("google"),
           buildTranslationAllBtn("baidu"),
@@ -323,6 +328,31 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
         callback();
       });
     }
+  }
+
+  Widget buildCheckTranslationKeyButton() {
+    return GestureDetector(
+      child: Padding(
+        padding: const EdgeInsets.only(right: 10),
+        child: Icon(Icons.fact_check_outlined),
+      ),
+      onTap: () {
+        WJHttp().checkTranslationKey(CheckTranslationKeyParam(widget.projectId, translationKeyChange)).then((response) {
+          if (response.code != 200) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.msg)));
+          } else {
+            int? translationCount = response.data;
+            if (translationCount != null) {
+              if (translationCount > 0) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("key已存在！")));
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("key可用！")));
+              }
+            }
+          }
+        });
+      },
+    );
   }
 
   Widget buildTranslationAllBtn(String translatePlatform) {

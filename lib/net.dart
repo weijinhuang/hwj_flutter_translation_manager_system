@@ -7,6 +7,7 @@ part 'net.g.dart';
 
 /**
     flutter pub run build_runner build --delete-conflicting-outputs
+    dart run build_runner build
  * */
 
 class CommonParam<DATA> {
@@ -231,3 +232,16 @@ class MergeTranslationParam {
 
   Map<String, dynamic> toJson() => _$MergeTranslationParamToJson(this);
 }
+
+
+@JsonSerializable()
+class CheckTranslationKeyParam {
+  String projectId;
+  String translationKey;
+  CheckTranslationKeyParam(this.projectId, this.translationKey);
+
+  factory CheckTranslationKeyParam.fromJson(Map<String, dynamic> json) => _$CheckTranslationKeyParamFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CheckTranslationKeyParamToJson(this);
+}
+

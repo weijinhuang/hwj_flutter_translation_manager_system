@@ -461,6 +461,7 @@ class _ProjectDetail extends State<ProjectDetail> {
             for (Translation? translation in languageIdToTranslationMap.values) {
               if (translation != null) {
                 if (translation.translationId == null) {
+                  translation.moduleId = this.modules.first.moduleId;
                   translation.translationKey = translationKey;
                   var oldTranslationContent = translation.oldTranslationContent;
                   if (translation.translationContent.trim().isNotEmpty || (oldTranslationContent != null && oldTranslationContent.isNotEmpty)) {
@@ -755,7 +756,7 @@ class _ProjectDetail extends State<ProjectDetail> {
         for (var element in value.data) {
           errorTipsBuffer.write("${element.languageDes}(${element.languageName}),");
         }
-        errorTipsBuffer.write("添加失败");
+        errorTipsBuffer.write("添加成功");
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorTipsBuffer.toString())));
       }
     });
