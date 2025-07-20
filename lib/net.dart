@@ -76,7 +76,7 @@ class Translation {
   String? comment;
   int? ratio = 0;
 
-  Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent, this.comment,this.ratio});
+  Translation(this.translationKey, this.languageId, this.translationContent, this.projectId, {this.translationId, this.moduleId, this.forceAdd, this.oldTranslationContent, this.comment, this.ratio});
 
   factory Translation.fromJson(Map<String, dynamic> json) => _$TranslationFromJson(json);
 
@@ -110,7 +110,7 @@ class Language {
   int? color = Colors.white.value;
   int? languageOrder = 0;
 
-  Language(this.languageName, this.languageDes, this.projectId, {this.languageId,this.languageOrder});
+  Language(this.languageName, this.languageDes, this.projectId, {this.languageId, this.languageOrder});
 
   factory Language.fromJson(Map<String, dynamic> json) => _$LanguageFromJson(json);
 
@@ -233,15 +233,16 @@ class MergeTranslationParam {
   Map<String, dynamic> toJson() => _$MergeTranslationParamToJson(this);
 }
 
-
 @JsonSerializable()
-class CheckTranslationKeyParam {
+class CheckTranslationKeEnableParam {
   String projectId;
   String translationKey;
-  CheckTranslationKeyParam(this.projectId, this.translationKey);
 
-  factory CheckTranslationKeyParam.fromJson(Map<String, dynamic> json) => _$CheckTranslationKeyParamFromJson(json);
+  CheckTranslationKeEnableParam(this.projectId, this.translationKey);
 
-  Map<String, dynamic> toJson() => _$CheckTranslationKeyParamToJson(this);
+  factory CheckTranslationKeEnableParam.fromJson(Map<String, dynamic> json) => _$CheckTranslationKeEnableParamFromJson(json);
+
+  Map<String, dynamic> toJson() => _$CheckTranslationKeEnableParamToJson(this);
 }
+
 

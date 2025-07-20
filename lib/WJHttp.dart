@@ -9,13 +9,12 @@ import 'package:convert/convert.dart';
 class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
-  String ip = "172.16.21.156";
-
-  // String ip = "192.168.3.188";
+  // String ip = "172.16.21.156";
+  String ip = "192.168.3.196";
 
   Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
     var dataJson = param.toJson();
-    print("Request:$dataJson");
+    print("Request:http://$ip:80/translationSystem \n$dataJson");
     final response = await http.post(Uri.parse("http://$ip:80/translationSystem"),
         headers: <String, String>{"Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json; charset=UTF-8', 'Accept': '*/*'}, body: jsonEncode(dataJson));
     print("response:${param.cmd}:${response.body}");
@@ -179,7 +178,7 @@ class WJHttp {
     return sendRequest(commonParam).then((value) => CommonListResponse<Translation>.fromJson(value, (json) => Translation.fromJson(json)));
   }
 
-  Future<CommonResponse<int?>> checkTranslationKey(CheckTranslationKeyParam param) async {
+  Future<CommonResponse<int?>> checkTranslationKey(CheckTranslationKeEnableParam param) async {
     var json = param.toJson();
     CommonParam commonParam = CommonParam("checkTranslationKey", data: json);
     return sendRequest(commonParam).then((value) => CommonResponse.fromJson(value, (json) => json as int));

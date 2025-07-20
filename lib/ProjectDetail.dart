@@ -82,7 +82,7 @@ class _ProjectDetail extends State<ProjectDetail> {
               languageList.sort((a, b) {
                 return (a.languageOrder ?? 0) - (b.languageOrder ?? 0);
               });
-              http.fetchTranslationV2(project.projectId, moduleId: mCurrentSelectedModule?.moduleId ?? -1).then((translationListWrapper) {
+              http.fetchTranslationV2(project.projectId).then((translationListWrapper) {
                 originalTranslationList = translationListWrapper.data;
                 translationListShowing.addAll(originalTranslationList);
                 setState(() {

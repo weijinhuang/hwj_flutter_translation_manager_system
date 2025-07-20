@@ -97,13 +97,13 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Text(
+          const Text(
             "编辑翻译",
             style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
           ),
           Spacer(),
           GestureDetector(
-            child: Text("复制"),
+            child: const Icon(Icons.copy),
             onTap: () {
               setState(() {
                 translationKeyChange = "${translationKeyChange}_copy";
@@ -118,6 +118,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
         ],
       ),
     );
+
     widgetList.add(titleRow);
     Widget keyText;
     keyText = TextFormField(
@@ -148,15 +149,14 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
       },
     );
 
+    //Key
     Widget keyItem = Container(
       width: 500,
       height: 80,
       child: Row(
         children: [
           Expanded(
-            child: Stack(
-                alignment: AlignmentDirectional.centerStart,
-                children: [
+            child: Stack(alignment: AlignmentDirectional.centerStart, children: [
               keyText,
               Align(alignment: Alignment.centerRight, child: buildCheckTranslationKeyButton()),
             ]),
@@ -200,7 +200,7 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
                     border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(5))),
-                    focusedBorder: OutlineInputBorder(
+                    focusedBorder: const OutlineInputBorder(
                       borderRadius: BorderRadius.all(Radius.circular(5)),
                       borderSide: BorderSide(color: Colors.green, width: 1.0), // 聚焦时边框颜色
                     ),
@@ -333,11 +333,16 @@ class _EditTranslationDetailPage extends State<EditTranslationDetailPage> with S
   Widget buildCheckTranslationKeyButton() {
     return GestureDetector(
       child: Padding(
-        padding: const EdgeInsets.only(right: 10),
-        child: Icon(Icons.fact_check_outlined),
+
+        padding: const EdgeInsets.only(right:18.0),
+        child: Image.asset(
+          'images/ic_check_translation_key.png',
+          width: 25,
+          height: 25,
+        ),
       ),
       onTap: () {
-        WJHttp().checkTranslationKey(CheckTranslationKeyParam(widget.projectId, translationKeyChange)).then((response) {
+        WJHttp().checkTranslationKey(CheckTranslationKeEnableParam(widget.projectId, translationKeyChange)).then((response) {
           if (response.code != 200) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(response.msg)));
           } else {
