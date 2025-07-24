@@ -6,7 +6,7 @@ import 'package:xml/xml.dart';
 import 'package:excel/excel.dart';
 
 class ImportTranslationToolkit {
-  Future<CommonListResponse<Translation>> importAndroid(Language language, int moduleId) async {
+  Future<CommonResponse<void>> importAndroid(Language language, int moduleId) async {
     print("导入Android翻译");
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
     if (result != null && result.files.isNotEmpty) {
@@ -15,7 +15,7 @@ class ImportTranslationToolkit {
       if (null != fileBytes) {
         xmlString = utf8.decode(fileBytes);
       } else {
-        return CommonListResponse(-1, "解析文件失败", []);
+        return CommonResponse(-1, "解析文件失败", null);
       }
       var xmlDocument = XmlDocument.parse(xmlString);
 
@@ -50,13 +50,13 @@ class ImportTranslationToolkit {
           }
         }
       }
-      return await WJHttp().addTranslationsV2(translations);
+      return await WJHttp().addTranslationsV3(translations);
     } else {
-      return CommonListResponse(-1, "未选择文件", []);
+      return CommonResponse(-1, "未选择文件", null);
     }
   }
 
-  Future<CommonListResponse<Translation>> importIOS(Language language, int moduleId) async {
+  Future<CommonResponse<void>> importIOS(Language language, int moduleId) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
     if (result != null && result.files.isNotEmpty) {
       final fileBytes = result.files.first.bytes;
@@ -79,16 +79,16 @@ class ImportTranslationToolkit {
             translations.add(translation);
           }
         }
-        return await WJHttp().addTranslationsV2(translations);
+        return await WJHttp().addTranslationsV3(translations);
       } else {
-        return CommonListResponse(-1, "文件解析出错", []);
+        return CommonResponse(-1, "文件解析出错", null);
       }
     } else {
-      return CommonListResponse(-1, "未选择文件", []);
+      return CommonResponse(-1, "未选择文件", null);
     }
   }
 
-  Future<CommonListResponse<Translation>> importExcel(List<Language> localLanguageList, String projectId, int moduleId) async {
+  Future<CommonResponse<void>> importExcel(List<Language> localLanguageList, String projectId, int moduleId) async {
     String? key;
     List<Translation> translationList = [];
     FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.any, allowMultiple: false);
@@ -99,7 +99,7 @@ class ImportTranslationToolkit {
         try {
           excel = Excel.decodeBytes(bytes);
         } catch (e) {
-          return CommonListResponse(-1, "Excel 解析出错，建议使用Microsoft Office Excel来编辑表格，不要使用金山WPS \n错误信息： $e", []);
+          return CommonResponse(-1, "Excel 解析出错，建议使用Microsoft Office Excel来编辑表格，不要使用金山WPS \n错误信息： $e", null);
         }
 
         var sheets = excel?.sheets;
@@ -144,24 +144,24 @@ class ImportTranslationToolkit {
                 }
               } else {
                 print("添加语言失败：${result.msg}");
-                return CommonListResponse(-1, result.msg, []);
+                return CommonResponse(-1, result.msg ?? "添加语言失败", null);
               }
             } else {
-              return CommonListResponse(-1, "文件解析出错，未解析到语言", []);
+              return CommonResponse(-1, "文件解析出错，未解析到语言", null);
             }
           }
         }
         if (translationList.isNotEmpty) {
-          var commonListResponse = await WJHttp().addTranslationsV2(translationList);
-          return commonListResponse;
+          var commonListResponse = await WJHttp().addTranslationsV3(translationList);
+          return CommonResponse(200, "导入成功", null);
         } else {
-          return CommonListResponse(-1, "未解析到翻译", []);
+          return CommonResponse(-1, "未解析到翻译", null);
         }
       } else {
-        return CommonListResponse(-1, "文件解析出错", []);
+        return CommonResponse(-1, "文件解析出错", null);
       }
     } else {
-      return CommonListResponse(-1, "未选择文件", []);
+      return CommonResponse(-1, "未选择文件", null);
     }
   }
 }

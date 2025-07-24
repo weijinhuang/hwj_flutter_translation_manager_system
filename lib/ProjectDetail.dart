@@ -174,6 +174,9 @@ class _ProjectDetail extends State<ProjectDetail> {
             return;
           }
           onValue(result) {
+            setState(() {
+              importingTranslation = false;
+            });
             if (result.code == -1) {
               showDialog(
                   barrierDismissible: true,
@@ -183,17 +186,20 @@ class _ProjectDetail extends State<ProjectDetail> {
                         content: Text(result.msg),
                       ));
             } else {
-              var failedList = result.data;
-              if (failedList.isNotEmpty) {
-                print("有重复翻译");
-                toComparePage(failedList);
-              } else {
-                print("导入成功");
-                fetchTranslation();
-              }
+              // var failedList = result.data;
+              // if (failedList.isNotEmpty) {
+              //   print("有重复翻译");
+              //   toComparePage(failedList);
+              // } else {
+              print("导入成功");
+              fetchTranslation();
+              // }
             }
           }
 
+          setState(() {
+            importingTranslation = true;
+          });
           if (platForm == "excel") {
             ImportTranslationToolkit().importExcel(languageList, project.projectId, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
           } else {
@@ -227,54 +233,62 @@ class _ProjectDetail extends State<ProjectDetail> {
   GlobalKey importBtnKey = GlobalKey();
   GlobalKey languageTitleItemKey = GlobalKey();
 
-  Widget buildBody() {
-    return Container(
-      // color: Colors.blueGrey,
+  bool importingTranslation = false;
 
-      margin: const EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 80),
-      child: Column(
-        // physics: const NeverScrollableScrollPhysics(),
-        // crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SizedBox(
-            height: 40,
-            child: Container(
-              decoration: const BoxDecoration(color: Color(0xFFE0E0E0), borderRadius: BorderRadius.all(Radius.circular(25.0))),
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  buildDropDown(),
-                  Expanded(
-                    child: TextFormField(
-                      autofocus: true,
-                      textInputAction: TextInputAction.search,
-                      decoration: const InputDecoration(border: InputBorder.none, filled: false, hintText: "输入key或翻译内容搜索"),
-                      onChanged: (value) {
-                        // project.projectName = value;
-                      },
-                      onFieldSubmitted: (value) {
-                        searchTranslation(value);
-                      },
-                    ),
-                  ),
-                  const Text("模糊查找"),
-                  Switch(
-                    value: fuzzySearch,
-                    onChanged: (bool value) {
-                      setState(() {
-                        fuzzySearch = value;
-                      });
+  Widget buildBody() {
+    List<Widget> bodyWidgetList = [];
+    if(importingTranslation){
+      bodyWidgetList.add(const Center(child: CircularProgressIndicator()));
+    }
+    bodyWidgetList.add( Column(
+      // physics: const NeverScrollableScrollPhysics(),
+      // crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 40,
+          child: Container(
+            decoration: const BoxDecoration(color: Color(0xFFE0E0E0), borderRadius: BorderRadius.all(Radius.circular(25.0))),
+            child: Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                buildDropDown(),
+                Expanded(
+                  child: TextFormField(
+                    autofocus: true,
+                    textInputAction: TextInputAction.search,
+                    decoration: const InputDecoration(border: InputBorder.none, filled: false, hintText: "输入key或翻译内容搜索"),
+                    onChanged: (value) {
+                      // project.projectName = value;
                     },
-                    activeColor: Colors.blueAccent,
+                    onFieldSubmitted: (value) {
+                      searchTranslation(value);
+                    },
                   ),
-                ],
-              ),
+                ),
+                const Text("模糊查找"),
+                Switch(
+                  value: fuzzySearch,
+                  onChanged: (bool value) {
+                    setState(() {
+                      fuzzySearch = value;
+                    });
+                  },
+                  activeColor: Colors.blueAccent,
+                ),
+              ],
             ),
           ),
-          // buildTranslationTable(),
-          buildLanguageListTitle(),
-          buildTranslationList(mCurrentSelectedModule),
-        ],
+        ),
+        // buildTranslationTable(),
+        buildLanguageListTitle(),
+        buildTranslationList(mCurrentSelectedModule),
+      ],
+    ));
+    return Container(
+      margin: const EdgeInsets.only(left: 20, top: 20, right: 20, bottom: 80),
+      child: Stack(
+        // color: Colors.blueGrey,
+        children: bodyWidgetList,
       ),
     );
   }
@@ -477,7 +491,6 @@ class _ProjectDetail extends State<ProjectDetail> {
                     print("更新翻译：${translation.toJson()}");
                     updateTranslationList.add(translation);
                   }
-
                 }
               }
             }

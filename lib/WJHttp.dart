@@ -10,7 +10,7 @@ class WJHttp {
   String baiduScreat = "kab0xQelR7tGlmlpWR5o";
 
   // String ip = "172.16.21.156";
-  String ip = "192.168.3.196";
+  String ip = "192.168.3.168";
 
   Future<Map<String, dynamic>> sendRequest<PARAM, DATA>(CommonParam<PARAM> param) async {
     var dataJson = param.toJson();
@@ -169,6 +169,15 @@ class WJHttp {
       return CommonListResponse<Translation>.fromJson(value, (json) {
         return Translation.fromJson(json);
       });
+    });
+  }
+
+  Future<CommonResponse<void>> addTranslationsV3(List<Translation> translation) async {
+    var json = translation.map((e) => e.toJson()).toList(growable: false);
+    CommonParam commonParam = CommonParam("batchAddTranslation", data: json);
+    // return sendRequest(commonParam).then((value) => CommonListResponse<Translation>.fromJson(value, (json) => Translation.fromJson(json)));
+    return sendRequest(commonParam).then((value) {
+      return CommonResponse.fromJson(value, (json) {});
     });
   }
 
