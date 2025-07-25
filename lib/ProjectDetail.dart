@@ -86,6 +86,7 @@ class _ProjectDetail extends State<ProjectDetail> {
                 originalTranslationList = translationListWrapper.data;
                 translationListShowing.addAll(originalTranslationList);
                 setState(() {
+                  importingTranslation = false;
                   rebuildTranslationData();
                 });
               });
@@ -173,41 +174,68 @@ class _ProjectDetail extends State<ProjectDetail> {
           if (platForm == null) {
             return;
           }
-          onValue(result) {
-            setState(() {
-              importingTranslation = false;
-            });
-            if (result.code == -1) {
-              showDialog(
-                  barrierDismissible: true,
-                  context: context,
-                  builder: (context) => AlertDialog(
-                        title: const Text("导入翻译出错"),
-                        content: Text(result.msg),
-                      ));
-            } else {
-              // var failedList = result.data;
-              // if (failedList.isNotEmpty) {
-              //   print("有重复翻译");
-              //   toComparePage(failedList);
-              // } else {
-              print("导入成功");
-              fetchTranslation();
-              // }
+          onParseSuccess(result) {
+            if (result is CommonListResponse<Translation>) {
+              if (result.code == 200) {
+                setState(() {
+                  importingTranslation = true;
+                });
+
+                WJHttp().addTranslationsV3(result.data).then((addResult) {
+                  if (addResult.code == 200) {
+                      fetchTranslation();
+                  } else {
+                    setState(() {
+                      importingTranslation = false;
+                    });
+                    showDialog(
+                        barrierDismissible: true,
+                        context: context,
+                        builder: (context) => AlertDialog(
+                              title: const Text("导入翻译出错"),
+                              content: Text(addResult.msg ?? "未知错误"),
+                            ));
+                  }
+                });
+              } else {
+                showDialog(
+                    barrierDismissible: true,
+                    context: context,
+                    builder: (context) => AlertDialog(
+                          title: const Text("导入翻译出错"),
+                          content: Text(result.msg ?? "未知错误"),
+                        ));
+              }
             }
+
+            // if (result.code == -1) {
+            //   showDialog(
+            //       barrierDismissible: true,
+            //       context: context,
+            //       builder: (context) => AlertDialog(
+            //             title: const Text("导入翻译出错"),
+            //             content: Text(result.msg),
+            //           ));
+            // } else {
+            //   var failedList = result.data;
+            //   if (failedList.isNotEmpty) {
+            //     print("有重复翻译");
+            //     toComparePage(failedList);
+            //   } else {
+            //     print("导入成功");
+            //     fetchTranslation();
+            //   }
+            // }
           }
 
-          setState(() {
-            importingTranslation = true;
-          });
           if (platForm == "excel") {
-            ImportTranslationToolkit().importExcel(languageList, project.projectId, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
+            ImportTranslationToolkit().importExcel(languageList, project.projectId, mCurrentSelectedModule?.moduleId ?? 0).then(onParseSuccess);
           } else {
             buildImportLanguageDialog((language) {
               if (platForm == "android") {
-                ImportTranslationToolkit().importAndroid(language, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
+                ImportTranslationToolkit().importAndroid(language, mCurrentSelectedModule?.moduleId ?? 0).then(onParseSuccess);
               } else if (platForm == "ios") {
-                ImportTranslationToolkit().importIOS(language, mCurrentSelectedModule?.moduleId ?? 0).then(onValue);
+                ImportTranslationToolkit().importIOS(language, mCurrentSelectedModule?.moduleId ?? 0).then(onParseSuccess);
               }
             });
           }
@@ -237,10 +265,10 @@ class _ProjectDetail extends State<ProjectDetail> {
 
   Widget buildBody() {
     List<Widget> bodyWidgetList = [];
-    if(importingTranslation){
-      bodyWidgetList.add(const Center(child: CircularProgressIndicator()));
+    if (importingTranslation) {
+      bodyWidgetList.add(const Center(child: CircularProgressIndicator(color: Colors.blueAccent,)));
     }
-    bodyWidgetList.add( Column(
+    bodyWidgetList.add(Column(
       // physics: const NeverScrollableScrollPhysics(),
       // crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
